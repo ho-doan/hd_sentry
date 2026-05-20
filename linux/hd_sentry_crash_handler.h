@@ -1,6 +1,8 @@
 #ifndef HD_SENTRY_CRASH_HANDLER_H_
 #define HD_SENTRY_CRASH_HANDLER_H_
 
+#include <glib.h>
+
 G_BEGIN_DECLS
 
 void hd_sentry_crash_handler_install(void);
