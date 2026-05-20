@@ -28,9 +28,7 @@ LONG WINAPI UnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
   const USHORT captured = CaptureStackBackTrace(0, 64, frames, nullptr);
   stack << WinStackTraceFormatFrames(frames, captured);
 
-  HdSentryCrashStore::WriteReport("windows", "unhandled_exception",
-                                  "Unhandled native exception",
-                                  stack.str());
+  HdSentryCrashStore::WriteWindowsNativeCrash(info, stack.str());
   return EXCEPTION_CONTINUE_SEARCH;
 }
 

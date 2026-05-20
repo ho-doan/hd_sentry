@@ -23,6 +23,7 @@ list(APPEND PLUGIN_SOURCES
   "hd_sentry_crash_store.cpp"
   "hd_sentry_crash_handler.cpp"
   "hd_sentry_win_stack_trace.cpp"
+  "hd_sentry_win_minidump.cpp"
   "hd_sentry_host_api_impl.cpp"
   "messages.g.cpp"
 )

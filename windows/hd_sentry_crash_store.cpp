@@ -1,5 +1,7 @@
 #include "hd_sentry_crash_store.h"
 
+#include "hd_sentry_win_minidump.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -23,6 +25,7 @@ namespace fs = std::filesystem;
 constexpr char kCrashDirName[] = "hd_sentry_crashes";
 constexpr char kFilePrefix[] = "crash_";
 constexpr char kFileSuffix[] = ".txt";
+constexpr char kDumpSuffix[] = ".dmp";
 
 fs::path& CrashDirectory() {
   static fs::path directory;
@@ -43,12 +46,53 @@ std::string IsoTimestamp() {
   return stream.str();
 }
 
-void ValidateFileName(const std::string& file_name) {
+std::string MakeCrashStem() {
+  const auto millis =
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count();
+  return std::string(kFilePrefix) + std::to_string(millis);
+}
+
+void ValidateCrashFileName(const std::string& file_name) {
   if (file_name.find('/') != std::string::npos ||
       file_name.find('\\') != std::string::npos ||
       file_name.find("..") != std::string::npos) {
     throw std::runtime_error("Invalid crash file name");
   }
+  if (file_name.rfind(kFilePrefix, 0) != 0) {
+    throw std::runtime_error("Invalid crash file name");
+  }
+  const size_t n = file_name.size();
+  const bool ok_txt =
+      n >= 4 && file_name.compare(n - 4, 4, ".txt") == 0;
+  const bool ok_dmp =
+      n >= 4 && file_name.compare(n - 4, 4, ".dmp") == 0;
+  if (!ok_txt && !ok_dmp) {
+    throw std::runtime_error("Invalid crash file name");
+  }
+}
+
+void WriteTextReportFile(const fs::path& full_path,
+                         const std::string& platform,
+                         const std::string& type,
+                         const std::string& message,
+                         const std::string& stack_trace,
+                         const std::string& extra_footer = {}) {
+  std::ostringstream body;
+  body << "=== HD Sentry Native Crash Report ===\n"
+       << "platform: " << platform << '\n'
+       << "timestamp: " << IsoTimestamp() << '\n'
+       << "type: " << type << '\n'
+       << "message: " << message << "\n\n"
+       << "--- stack trace ---\n"
+       << stack_trace;
+  if (!extra_footer.empty()) {
+    body << '\n' << extra_footer;
+  }
+
+  std::ofstream output(full_path, std::ios::trunc);
+  output << body.str();
 }
 
 }  // namespace
@@ -107,7 +151,12 @@ std::vector<std::string> HdSentryCrashStore::ListFileNames() {
 }
 
 std::string HdSentryCrashStore::ReadFile(const std::string& file_name) {
-  ValidateFileName(file_name);
+  ValidateCrashFileName(file_name);
+  const size_t n = file_name.size();
+  if (n >= 4 && file_name.compare(n - 4, 4, ".dmp") == 0) {
+    throw std::runtime_error(
+        ".dmp is binary; open it with WinDbg from the crash directory.");
+  }
   ConfigureHdSentry();
   std::ifstream input(CrashDirectory() / file_name);
   std::ostringstream buffer;
@@ -116,15 +165,31 @@ std::string HdSentryCrashStore::ReadFile(const std::string& file_name) {
 }
 
 bool HdSentryCrashStore::DeleteFileHdSentry(const std::string& file_name) {
-  ValidateFileName(file_name);
+  ValidateCrashFileName(file_name);
   ConfigureHdSentry();
   std::error_code error;
   return fs::remove(CrashDirectory() / file_name, error);
 }
 
 void HdSentryCrashStore::ClearAll() {
-  for (const auto& name : ListFileNames()) {
-    DeleteFileHdSentry(name);
+  ConfigureHdSentry();
+  std::error_code ec;
+  for (const auto& entry : fs::directory_iterator(CrashDirectory(), ec)) {
+    if (!entry.is_regular_file()) {
+      continue;
+    }
+    const auto name = entry.path().filename().string();
+    if (name.rfind(kFilePrefix, 0) != 0) {
+      continue;
+    }
+    const size_t n = name.size();
+    const bool ok_txt =
+        n >= 4 && name.compare(n - 4, 4, ".txt") == 0;
+    const bool ok_dmp =
+        n >= 4 && name.compare(n - 4, 4, ".dmp") == 0;
+    if (ok_txt || ok_dmp) {
+      fs::remove(entry.path(), ec);
+    }
   }
 }
 
@@ -133,25 +198,32 @@ std::string HdSentryCrashStore::WriteReport(const std::string& platform,
                                             const std::string& message,
                                             const std::string& stack_trace) {
   ConfigureHdSentry();
-  const auto millis =
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
-  const std::string file_name =
-      std::string(kFilePrefix) + std::to_string(millis) + kFileSuffix;
-
-  std::ostringstream body;
-  body << "=== HD Sentry Native Crash Report ===\n"
-       << "platform: " << platform << '\n'
-       << "timestamp: " << IsoTimestamp() << '\n'
-       << "type: " << type << '\n'
-       << "message: " << message << "\n\n"
-       << "--- stack trace ---\n"
-       << stack_trace;
-
-  std::ofstream output(CrashDirectory() / file_name, std::ios::trunc);
-  output << body.str();
+  const std::string stem = MakeCrashStem();
+  const std::string file_name = stem + kFileSuffix;
+  WriteTextReportFile(CrashDirectory() / file_name, platform, type, message,
+                      stack_trace);
   return file_name;
 }
+
+#if defined(_WIN32)
+std::string HdSentryCrashStore::WriteWindowsNativeCrash(
+    void* exception_pointers,
+    const std::string& stack_trace) {
+  ConfigureHdSentry();
+  const std::string stem = MakeCrashStem();
+  const std::string txt_name = stem + kFileSuffix;
+  WriteTextReportFile(CrashDirectory() / txt_name, "windows",
+                      "unhandled_exception", "Unhandled native exception",
+                      stack_trace,
+                      std::string("--- minidump (WinDbg) ---\n") + stem +
+                          kDumpSuffix);
+
+  const fs::path dump_path = CrashDirectory() / (stem + kDumpSuffix);
+  auto* ep = static_cast<EXCEPTION_POINTERS*>(exception_pointers);
+  (void)WinWriteMiniDumpFile(dump_path, ep);
+
+  return txt_name;
+}
+#endif
 
 }  // namespace hd_sentry

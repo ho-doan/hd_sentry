@@ -60,7 +60,7 @@ await HdSentry.clearAllCrashFiles();
 | ---------- | ------------------ | --------- |
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
 | iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
-| Windows | `SetUnhandledExceptionFilter` + dbghelp symbolication | `%LOCALAPPDATA%/hd_sentry_crashes/` |
+| Windows | `SetUnhandledExceptionFilter` + dbghelp + **minidump `.dmp`** | `%LOCALAPPDATA%/hd_sentry_crashes/` |
 | Linux | Signal handlers | `~/.local/share/hd_sentry_crashes/` |
 | Web | `error`, `unhandledrejection` | `localStorage` |
 
@@ -91,6 +91,7 @@ message: ...
 - `initialize()` đã bắt lỗi Flutter; không cần gán `FlutterError.onError` thủ công trừ khi bạn muốn logic riêng (handler cũ vẫn được gọi sau khi ghi file).
 - Crash **native** vẫn do handler native bắt; `captureException` dùng cho lỗi Dart/Flutter.
 - Sau khi ghi file, crash vẫn được chuyển tiếp cho handler mặc định của hệ điều hành.
+- **Windows (native crash):** ghi song song **`crash_<millis>.txt`** và **`crash_<millis>.dmp`** (MiniDump, mở bằng WinDbg). API Dart `listCrashFileNames` / `listCrashReports` chỉ trả **`.txt`**; mở `getCrashDirectory()` trong Explorer để thấy `.dmp`. `readCrashFile` không đọc `.dmp` (nhị phân). `clearAllCrashFiles` xóa cả hai loại.
 
 ### Windows: lấy `.pdb` khi build Release
 
@@ -101,7 +102,9 @@ message: ...
   **`$FLUTTER_ROOT/bin/cache/artifacts/engine/windows-x64/`**  
   (có thể là `windows-x64-release` tùy bản SDK). Tìm **`flutter_windows.dll.pdb`** (nếu có) và đặt cạnh `flutter_windows.dll` trong bản giao cho người dùng khi cần đọc stack trong engine.
 
-Trên **Windows**, stack trace dùng **dbghelp**: `SymFromAddr` (tên hàm) và **`SymGetLineFromAddr64`** để thêm **`(đường_dẫn\file.cpp:123)`** khi PDB có **bảng dòng** (không chỉ export). PDB chỉ có tên hàm mà không có file/line thường do build không bật thông tin dòng (`/Zi` hoặc tương đương) hoặc dùng PDB “tối giản”. Ưu tiên **RelWithDebInfo** / Release có **`/Zi`** + linker **`/DEBUG`**; copy đủ `.pdb` (app + `flutter_windows.dll.pdb`) cạnh file chạy.
+**WinDbg:** `File` → `Open crash dump` → chọn `crash_….dmp` trong thư mục crash; nạp thêm PDB của app/engine nếu cần symbol/file:line.
+
+Trên **Windows**, stack trong file `.txt` dùng **dbghelp** (`SymFromAddr`, `SymGetLineFromAddr64` / bản Unicode tương ứng) khi có PDB đủ bảng dòng (`/Zi`, linker `/DEBUG`).
 
 ## Regenerate Pigeon
 

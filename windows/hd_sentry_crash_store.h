@@ -18,6 +18,12 @@ class HdSentryCrashStore {
                                  const std::string& type,
                                  const std::string& message,
                                  const std::string& stack_trace);
+
+#if defined(_WIN32)
+  /// Writes paired `crash_<millis>.txt` and `crash_<millis>.dmp` for WinDbg. Returns the .txt name.
+  static std::string WriteWindowsNativeCrash(void* exception_pointers,
+                                             const std::string& stack_trace);
+#endif
 };
 
 }  // namespace hd_sentry
