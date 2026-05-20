@@ -11,6 +11,8 @@
 
 #define HD_SENTRY_NT_PRSTATUS 1
 #define HD_SENTRY_NT_SIGINFO 0x53494749
+#define HD_SENTRY_NT_FILE 0x46494c45
+#define HD_SENTRY_NT_PRPSINFO 3
 
 typedef struct HdSentryElfSiginfo {
   int si_signo;
@@ -45,6 +47,25 @@ typedef struct HdSentryElfPrstatus {
   int pr_fpvalid;
 } HdSentryElfPrstatus;
 
+/* GDB on x86_64 Linux expects pr_reg at byte offset 112 in NT_PRSTATUS. */
+#define HD_SENTRY_ELF_PRSTATUS_REG_OFFSET 112
+
+typedef struct HdSentryElfPrpsinfo {
+  char pr_state;
+  char pr_sname;
+  char pr_zomb;
+  char pr_nice;
+  unsigned long pr_flag;
+  unsigned short pr_uid;
+  unsigned short pr_gid;
+  int pr_pid;
+  int pr_ppid;
+  int pr_pgrp;
+  int pr_sid;
+  char pr_fname[16];
+  char pr_psargs[80];
+} HdSentryElfPrpsinfo;
+
 #elif defined(__aarch64__)
 
 #define HD_SENTRY_ELF_NGREG 34
@@ -71,6 +92,24 @@ typedef struct HdSentryElfPrstatus {
   HdSentryElfGregset pr_reg;
   int pr_fpvalid;
 } HdSentryElfPrstatus;
+
+#define HD_SENTRY_ELF_PRSTATUS_REG_OFFSET 112
+
+typedef struct HdSentryElfPrpsinfo {
+  char pr_state;
+  char pr_sname;
+  char pr_zomb;
+  char pr_nice;
+  unsigned long pr_flag;
+  unsigned short pr_uid;
+  unsigned short pr_gid;
+  int pr_pid;
+  int pr_ppid;
+  int pr_pgrp;
+  int pr_sid;
+  char pr_fname[16];
+  char pr_psargs[80];
+} HdSentryElfPrpsinfo;
 
 #endif
 

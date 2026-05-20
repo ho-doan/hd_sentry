@@ -17,6 +17,7 @@
 #define HD_SENTRY_FILE_SUFFIX ".txt"
 #define HD_SENTRY_DUMP_SUFFIX ".dmp"
 #define HD_SENTRY_MAPS_SUFFIX ".maps"
+#define HD_SENTRY_GDB_SUFFIX ".gdb"
 
 static gchar* g_crash_directory = NULL;
 
@@ -48,7 +49,8 @@ static gboolean validate_file_name(const gchar* file_name, GError** error) {
   const gboolean ok_txt = n >= 4 && strcmp(file_name + n - 4, ".txt") == 0;
   const gboolean ok_dmp = n >= 4 && strcmp(file_name + n - 4, ".dmp") == 0;
   const gboolean ok_maps = n >= 5 && strcmp(file_name + n - 5, ".maps") == 0;
-  if (!ok_txt && !ok_dmp && !ok_maps) {
+  const gboolean ok_gdb = n >= 4 && strcmp(file_name + n - 4, ".gdb") == 0;
+  if (!ok_txt && !ok_dmp && !ok_maps && !ok_gdb) {
     g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_INVAL, "Invalid crash file name");
     return FALSE;
   }
@@ -230,7 +232,8 @@ void hd_sentry_crash_store_clear_all(void) {
     const gboolean ok_txt = n >= 4 && strcmp(name + n - 4, ".txt") == 0;
     const gboolean ok_dmp = n >= 4 && strcmp(name + n - 4, ".dmp") == 0;
     const gboolean ok_maps = n >= 5 && strcmp(name + n - 5, ".maps") == 0;
-    if (!ok_txt && !ok_dmp && !ok_maps) {
+    const gboolean ok_gdb = n >= 4 && strcmp(name + n - 4, ".gdb") == 0;
+    if (!ok_txt && !ok_dmp && !ok_maps && !ok_gdb) {
       continue;
     }
     g_autofree gchar* path =
@@ -277,6 +280,8 @@ gchar* hd_sentry_crash_store_write_native_crash(
       "%s/%s%s", g_crash_directory, stem, HD_SENTRY_DUMP_SUFFIX);
   g_autofree gchar* maps_path = g_strdup_printf(
       "%s/%s%s", g_crash_directory, stem, HD_SENTRY_MAPS_SUFFIX);
+  g_autofree gchar* gdb_path = g_strdup_printf(
+      "%s/%s%s", g_crash_directory, stem, HD_SENTRY_GDB_SUFFIX);
 
   GString* footer = g_string_new(NULL);
   if (g_file_test(dump_path, G_FILE_TEST_IS_REGULAR)) {
@@ -287,6 +292,13 @@ gchar* hd_sentry_crash_store_write_native_crash(
   if (g_file_test(maps_path, G_FILE_TEST_IS_REGULAR)) {
     g_string_append_printf(footer, "--- memory maps ---\n%s%s\n", stem,
                            HD_SENTRY_MAPS_SUFFIX);
+  }
+  if (g_file_test(gdb_path, G_FILE_TEST_IS_REGULAR)) {
+    g_string_append_printf(footer,
+                           "--- gdb script ---\n%s%s\n"
+                           "  gdb -x %s/%s%s <path-to-app-binary>\n",
+                           stem, HD_SENTRY_GDB_SUFFIX, g_crash_directory, stem,
+                           HD_SENTRY_GDB_SUFFIX);
   }
 
   write_text_report(full_path, platform, type, message, stack_trace,

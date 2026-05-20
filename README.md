@@ -92,7 +92,7 @@ message: ...
 - Crash **native** vẫn do handler native bắt; `captureException` dùng cho lỗi Dart/Flutter.
 - Sau khi ghi file, crash vẫn được chuyển tiếp cho handler mặc định của hệ điều hành.
 - **Windows (native crash):** ghi song song **`crash_<millis>.txt`** và **`crash_<millis>.dmp`** (MiniDump, mở bằng WinDbg). API Dart `listCrashFileNames` / `listCrashReports` chỉ trả **`.txt`**; mở `getCrashDirectory()` trong Explorer để thấy `.dmp`. `readCrashFile` không đọc `.dmp` (nhị phân). `clearAllCrashFiles` xóa cả hai loại.
-- **Linux (native crash):** tương tự — **`crash_<millis>.txt`**, **`crash_<millis>.dmp`** (ELF core cho gdb/lldb), **`crash_<millis>.maps`** (snapshot `/proc/self/maps`). `listCrashReports` chỉ liệt kê `.txt`; `readCrashFile` từ chối `.dmp`, cho phép đọc `.maps` dạng text. `clearAllCrashFiles` xóa cả ba loại.
+- **Linux (native crash):** tương tự — **`crash_<millis>.txt`**, **`crash_<millis>.dmp`** (ELF core), **`crash_<millis>.maps`**, **`crash_<millis>.gdb`** (script gdb). `listCrashReports` chỉ liệt kê `.txt`; `readCrashFile` từ chối `.dmp`. `clearAllCrashFiles` xóa tất cả các loại trên.
 
 ### Windows: lấy `.pdb` khi build Release
 
@@ -109,7 +109,24 @@ Trên **Windows**, stack trong file `.txt` dùng **dbghelp** (`SymFromAddr`, `Sy
 
 Trên **Linux**, stack native dùng `backtrace` / `dladdr` (glibc). Build **debug** hoặc giữ symbol (`-g`, không strip) để thấy tên hàm thay vì chỉ địa chỉ; có thể dùng `addr2line -e <binary> <addr>` với các dòng trong báo cáo.
 
-**gdb (Linux core):** `gdb /path/to/your_app ~/.local/share/hd_sentry_crashes/crash_<millis>.dmp` — thay đường dẫn app bằng binary đã build (ví dụ `example/build/linux/x64/debug/bundle/example`). Nếu symbol thiếu, dùng kèm file `.maps` trong cùng thư mục.
+**gdb (Linux core):** build **debug** (`flutter run -d linux` / `flutter build linux --debug`). Trong thư mục crash có `crash_<millis>.gdb` — chạy:
+
+```bash
+gdb -x ~/.local/share/hd_sentry_crashes/crash_<millis>.gdb \
+  example/build/linux/x64/debug/bundle/hd_sentry_example
+```
+
+Hoặc thủ công:
+
+```bash
+cd example/build/linux/x64/debug/bundle
+gdb ./hd_sentry_example ~/.local/share/hd_sentry_crashes/crash_<millis>.dmp
+(gdb) set solib-search-path ./lib
+(gdb) bt full
+(gdb) info symbol $pc
+```
+
+`#0 ?? ()` tại địa chỉ `0x7f…` thường là crash trong **.so** (plugin `libcrash_native_demo_plugin.so`, `libflutter_linux_gtk.so`, libc) — cần debug build và `solib-search-path` trỏ tới `bundle/lib`. Địa chỉ trong plugin: `addr2line -e lib/libcrash_native_demo_plugin.so -f -C 0x<offset>`.
 
 ## Regenerate Pigeon
 
