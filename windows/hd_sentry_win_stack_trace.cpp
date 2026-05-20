@@ -11,6 +11,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <cstdio>
 
 #pragma comment(lib, "dbghelp.lib")
 
@@ -21,6 +22,19 @@ std::once_flag g_sym_once;
 
 inline DWORD64 PointerToDword64(const void* p) {
   return static_cast<DWORD64>(reinterpret_cast<uintptr_t>(p));
+}
+
+/// Fixed-width hex address; avoids iostream setw/fill leaking to other fields.
+inline std::string FormatHexPtr(uintptr_t value) {
+  char buf[24];
+#if UINTPTR_MAX == UINT64_MAX
+  std::snprintf(buf, sizeof(buf), "%016llx",
+                static_cast<unsigned long long>(value));
+#else
+  std::snprintf(buf, sizeof(buf), "%08x",
+                static_cast<unsigned int>(value));
+#endif
+  return std::string(buf);
 }
 
 void BasenameOnly(char* path) {
@@ -98,6 +112,8 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
 
   for (USHORT i = 0; i < frame_count; ++i) {
     void* addr = frames[i];
+    out << std::dec << std::setw(0);
+    out.fill(' ');
     out << '#' << static_cast<int>(i) << ' ';
 
     std::memset(symbol_storage, 0, sizeof(symbol_storage));
@@ -113,8 +129,7 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
         out << "+0x" << std::hex << displacement << std::dec;
       }
       AppendSourceLineIfPresent(process, addr, out);
-      out << " [0x" << std::hex << std::setw(sizeof(void*) * 2)
-          << reinterpret_cast<uintptr_t>(addr) << std::dec << "]\n";
+      out << " [0x" << FormatHexPtr(reinterpret_cast<uintptr_t>(addr)) << "]\n";
       continue;
     }
 
@@ -142,11 +157,9 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
       const auto offset = reinterpret_cast<uintptr_t>(addr) - base;
       out << path << "+0x" << std::hex << offset << std::dec;
       AppendSourceLineIfPresent(process, addr, out);
-      out << " [0x" << std::hex << std::setw(sizeof(void*) * 2)
-          << reinterpret_cast<uintptr_t>(addr) << std::dec << "]\n";
+      out << " [0x" << FormatHexPtr(reinterpret_cast<uintptr_t>(addr)) << "]\n";
     } else {
-      out << "0x" << std::hex << std::setw(sizeof(void*) * 2)
-          << reinterpret_cast<uintptr_t>(addr) << std::dec;
+      out << "0x" << FormatHexPtr(reinterpret_cast<uintptr_t>(addr));
       AppendSourceLineIfPresent(process, addr, out);
       out << '\n';
     }
