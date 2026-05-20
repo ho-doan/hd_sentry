@@ -15,7 +15,8 @@ import 'package:pigeon/pigeon.dart';
     cppSourceOut: 'windows/messages.g.cpp',
     cppOptions: CppOptions(namespace: 'hd_sentry'),
     gobjectHeaderOut: 'linux/messages.g.h',
-    gobjectSourceOut: 'linux/messages.g.c',
+    // GObject codegen uses nullptr — must compile as C++ (.cc), not .c.
+    gobjectSourceOut: 'linux/messages.g.cc',
     gobjectOptions: GObjectOptions(module: 'hd_sentry'),
     // cppHeaderOutWindows: 'windows/messages.g.h',
     // cppSourceOutWindows: 'windows/messages.g.cpp',

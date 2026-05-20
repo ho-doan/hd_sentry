@@ -11,14 +11,14 @@ project(${PROJECT_NAME} LANGUAGES CXX C)
 # not be changed.
 set(PLUGIN_NAME "hd_sentry_plugin")
 
-# Linux: Pigeon GObject (.c/.h) + crash logic (.c) + plugin entry (.cc).
+# Linux: Pigeon GObject (.cc/.h) + crash logic (.c) + plugin entry (.cc).
 list(APPEND PLUGIN_SOURCES
   "hd_sentry_plugin.cc"
   "hd_sentry_crash_handler.cc"
   "hd_sentry_host_api_impl.c"
   "hd_sentry_crash_store.c"
   "hd_sentry_crash_handler.c"
-  "messages.g.c"
+  "messages.g.cc"
 )
 
 # Define the plugin library target. Its name must not be changed (see comment
