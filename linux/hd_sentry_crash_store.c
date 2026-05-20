@@ -1,6 +1,9 @@
 #include "hd_sentry_crash_store.h"
 
+#include "hd_sentry_linux_crash_dump.h"
+
 #include <dirent.h>
+#include <signal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +15,8 @@
 #define HD_SENTRY_CRASH_DIR_NAME "hd_sentry_crashes"
 #define HD_SENTRY_FILE_PREFIX "crash_"
 #define HD_SENTRY_FILE_SUFFIX ".txt"
+#define HD_SENTRY_DUMP_SUFFIX ".dmp"
+#define HD_SENTRY_MAPS_SUFFIX ".maps"
 
 static gchar* g_crash_directory = NULL;
 
@@ -42,7 +47,8 @@ static gboolean validate_file_name(const gchar* file_name, GError** error) {
   const gsize n = strlen(file_name);
   const gboolean ok_txt = n >= 4 && strcmp(file_name + n - 4, ".txt") == 0;
   const gboolean ok_dmp = n >= 4 && strcmp(file_name + n - 4, ".dmp") == 0;
-  if (!ok_txt && !ok_dmp) {
+  const gboolean ok_maps = n >= 5 && strcmp(file_name + n - 5, ".maps") == 0;
+  if (!ok_txt && !ok_dmp && !ok_maps) {
     g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_INVAL, "Invalid crash file name");
     return FALSE;
   }
@@ -67,7 +73,8 @@ static gboolean write_text_report(const gchar* full_path,
                                 const gchar* platform,
                                 const gchar* type,
                                 const gchar* message,
-                                const gchar* stack_trace) {
+                                const gchar* stack_trace,
+                                const gchar* extra_footer) {
   g_autofree gchar* timestamp = iso_timestamp();
   FILE* file = fopen(full_path, "w");
   if (file == NULL) {
@@ -83,6 +90,9 @@ static gboolean write_text_report(const gchar* full_path,
           "%s\n",
           platform, timestamp, type, message,
           stack_trace != NULL ? stack_trace : "");
+  if (extra_footer != NULL && extra_footer[0] != '\0') {
+    fprintf(file, "%s", extra_footer);
+  }
   fclose(file);
   return TRUE;
 }
@@ -165,7 +175,7 @@ gchar* hd_sentry_crash_store_read_file(const gchar* file_name, GError** error) {
   const gsize n = strlen(file_name);
   if (n >= 4 && strcmp(file_name + n - 4, ".dmp") == 0) {
     g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_INVAL,
-                ".dmp is binary; open it with a debugger from the crash directory.");
+                ".dmp is binary; open it with gdb/lldb from the crash directory.");
     return NULL;
   }
 
@@ -219,7 +229,8 @@ void hd_sentry_crash_store_clear_all(void) {
     const gsize n = strlen(name);
     const gboolean ok_txt = n >= 4 && strcmp(name + n - 4, ".txt") == 0;
     const gboolean ok_dmp = n >= 4 && strcmp(name + n - 4, ".dmp") == 0;
-    if (!ok_txt && !ok_dmp) {
+    const gboolean ok_maps = n >= 5 && strcmp(name + n - 5, ".maps") == 0;
+    if (!ok_txt && !ok_dmp && !ok_maps) {
       continue;
     }
     g_autofree gchar* path =
@@ -240,6 +251,36 @@ gchar* hd_sentry_crash_store_write_report(const gchar* platform,
   g_autofree gchar* full_path =
       g_build_filename(g_crash_directory, file_name, NULL);
 
-  write_text_report(full_path, platform, type, message, stack_trace);
+  write_text_report(full_path, platform, type, message, stack_trace, NULL);
+  return g_strdup(file_name);
+}
+
+gchar* hd_sentry_crash_store_write_native_crash(
+    const gchar* platform,
+    const gchar* type,
+    const gchar* message,
+    const gchar* stack_trace,
+    gint signo,
+    const siginfo_t* info,
+    const void* ucontext) {
+  ensure_configured();
+  g_autofree gchar* stem = make_crash_stem();
+  g_autofree gchar* file_name =
+      g_strconcat(stem, HD_SENTRY_FILE_SUFFIX, NULL);
+  g_autofree gchar* full_path =
+      g_build_filename(g_crash_directory, file_name, NULL);
+
+  const gboolean dump_ok = hd_sentry_linux_crash_dump_write(
+      g_crash_directory, stem, signo, info, ucontext);
+
+  g_autofree gchar* footer = NULL;
+  if (dump_ok) {
+    footer = g_strdup_printf(
+        "\n--- core dump (gdb/lldb) ---\n%s%s\n"
+        "--- memory maps ---\n%s%s\n",
+        stem, HD_SENTRY_DUMP_SUFFIX, stem, HD_SENTRY_MAPS_SUFFIX);
+  }
+
+  write_text_report(full_path, platform, type, message, stack_trace, footer);
   return g_strdup(file_name);
 }

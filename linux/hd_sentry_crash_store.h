@@ -2,6 +2,7 @@
 #define HD_SENTRY_CRASH_STORE_H_
 
 #include <glib.h>
+#include <signal.h>
 
 G_BEGIN_DECLS
 
@@ -26,6 +27,20 @@ gchar* hd_sentry_crash_store_write_report(const gchar* platform,
                                           const gchar* type,
                                           const gchar* message,
                                           const gchar* stack_trace);
+
+/**
+ * Native fatal crash: writes crash_<millis>.txt plus companion .dmp / .maps.
+ * @signo / @info / @ucontext may be NULL for non-signal paths.
+ * Caller must g_free the returned .txt file name.
+ */
+gchar* hd_sentry_crash_store_write_native_crash(
+    const gchar* platform,
+    const gchar* type,
+    const gchar* message,
+    const gchar* stack_trace,
+    gint signo,
+    const siginfo_t* info,
+    const void* ucontext);
 
 G_END_DECLS
 

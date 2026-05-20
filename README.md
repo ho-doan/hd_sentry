@@ -61,7 +61,7 @@ await HdSentry.clearAllCrashFiles();
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
 | iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
 | Windows | `SetUnhandledExceptionFilter` + dbghelp + **minidump `.dmp`** | `%LOCALAPPDATA%/hd_sentry_crashes/` |
-| Linux | Signal handlers (C) + Pigeon GObject | `~/.local/share/hd_sentry_crashes/` |
+| Linux | Signal handlers + **ELF core `.dmp`** + `.maps` | `~/.local/share/hd_sentry_crashes/` |
 | Web | `error`, `unhandledrejection` | `localStorage` |
 
 ## Định dạng file
@@ -92,6 +92,7 @@ message: ...
 - Crash **native** vẫn do handler native bắt; `captureException` dùng cho lỗi Dart/Flutter.
 - Sau khi ghi file, crash vẫn được chuyển tiếp cho handler mặc định của hệ điều hành.
 - **Windows (native crash):** ghi song song **`crash_<millis>.txt`** và **`crash_<millis>.dmp`** (MiniDump, mở bằng WinDbg). API Dart `listCrashFileNames` / `listCrashReports` chỉ trả **`.txt`**; mở `getCrashDirectory()` trong Explorer để thấy `.dmp`. `readCrashFile` không đọc `.dmp` (nhị phân). `clearAllCrashFiles` xóa cả hai loại.
+- **Linux (native crash):** tương tự — **`crash_<millis>.txt`**, **`crash_<millis>.dmp`** (ELF core cho gdb/lldb), **`crash_<millis>.maps`** (snapshot `/proc/self/maps`). `listCrashReports` chỉ liệt kê `.txt`; `readCrashFile` từ chối `.dmp`, cho phép đọc `.maps` dạng text. `clearAllCrashFiles` xóa cả ba loại.
 
 ### Windows: lấy `.pdb` khi build Release
 
@@ -107,6 +108,8 @@ message: ...
 Trên **Windows**, stack trong file `.txt` dùng **dbghelp** (`SymFromAddr`, `SymGetLineFromAddr64` / bản Unicode tương ứng) khi có PDB đủ bảng dòng (`/Zi`, linker `/DEBUG`).
 
 Trên **Linux**, stack native dùng `backtrace` / `dladdr` (glibc). Build **debug** hoặc giữ symbol (`-g`, không strip) để thấy tên hàm thay vì chỉ địa chỉ; có thể dùng `addr2line -e <binary> <addr>` với các dòng trong báo cáo.
+
+**gdb (Linux core):** `gdb /path/to/your_app ~/.local/share/hd_sentry_crashes/crash_<millis>.dmp` — thay đường dẫn app bằng binary đã build (ví dụ `example/build/linux/x64/debug/bundle/example`). Nếu symbol thiếu, dùng kèm file `.maps` trong cùng thư mục.
 
 ## Regenerate Pigeon
 

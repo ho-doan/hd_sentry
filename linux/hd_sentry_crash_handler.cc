@@ -14,16 +14,17 @@ void TerminateHandler() {
       std::rethrow_exception(exception);
     }
     g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
-    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown",
-                                       stack);
+    hd_sentry_crash_store_write_native_crash("linux", "std_terminate", "unknown",
+                                             stack, SIGABRT, NULL, NULL);
   } catch (const std::exception& error) {
     g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
-    hd_sentry_crash_store_write_report("linux", "std_terminate", error.what(),
-                                       stack);
+    hd_sentry_crash_store_write_native_crash("linux", "std_terminate",
+                                             error.what(), stack, SIGABRT, NULL,
+                                             NULL);
   } catch (...) {
     g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
-    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown",
-                                       stack);
+    hd_sentry_crash_store_write_native_crash("linux", "std_terminate", "unknown",
+                                             stack, SIGABRT, NULL, NULL);
   }
   std::abort();
 }
