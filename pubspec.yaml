@@ -48,9 +48,6 @@ flutter:
         pluginClass: HdSentryPlugin
       windows:
         pluginClass: HdSentryPluginCApi
-      web:
-        pluginClass: HdSentryWeb
-        fileName: hd_sentry_web.dart
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

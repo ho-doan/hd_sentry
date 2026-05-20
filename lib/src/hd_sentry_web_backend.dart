@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
@@ -62,27 +63,28 @@ $stack
   void _installHandlers() {
     if (_handlersInstalled) return;
     _handlersInstalled = true;
-
     void onError(web.Event event) {
       final errorEvent = event as web.ErrorEvent;
+      final detail = _formatErrorEventForReport(errorEvent);
+      final message = errorEvent.message.isNotEmpty
+          ? errorEvent.message
+          : _shortLabelFromThrown(errorEvent.error);
       _persistCrash(
         type: 'window_error',
-        message: errorEvent.message,
-        stack: [
-          'filename: ${errorEvent.filename}',
-          'lineno: ${errorEvent.lineno}',
-          'colno: ${errorEvent.colno}',
-        ].join('\n'),
+        message: message,
+        stack: detail,
       );
     }
 
     void onUnhandledRejection(web.Event event) {
       final rejection = event as web.PromiseRejectionEvent;
-      final reason = '${rejection.reason}';
+      final reason = rejection.reason;
+      final detail = _describeJsValue(reason);
+      final short = _shortLabelFromThrown(reason);
       _persistCrash(
         type: 'unhandled_rejection',
-        message: reason,
-        stack: reason,
+        message: short,
+        stack: detail,
       );
     }
 
@@ -139,5 +141,95 @@ $stack
       message: message,
       stack: stackTrace ?? '',
     );
+  }
+}
+
+String _shortLabelFromThrown(JSAny? value) {
+  if (value == null) {
+    return '(no error object)';
+  }
+  if (value.isA<JSString>()) {
+    return (value as JSString).toDart;
+  }
+  if (value.isA<JSObject>()) {
+    final o = value as JSObject;
+    final msg = _readPropertyAsDartString(o, 'message');
+    if (msg.isNotEmpty) return msg;
+    final name = _readPropertyAsDartString(o, 'name');
+    if (name.isNotEmpty) return name;
+  }
+  try {
+    final d = value.dartify();
+    if (d != null) return d.toString();
+  } catch (_) {}
+  return value.toString();
+}
+
+/// Full context for [web.ErrorEvent]: location + thrown value (stack for JS [Error], incl. eval).
+String _formatErrorEventForReport(web.ErrorEvent e) {
+  final lines = <String>[
+    'ErrorEvent.message: ${e.message}',
+    'filename: ${e.filename}',
+    'lineno: ${e.lineno}',
+    'colno: ${e.colno}',
+    'event.type: ${e.type}',
+  ];
+  final err = e.error;
+  if (err != null) {
+    lines.add('');
+    lines.add('--- ErrorEvent.error (thrown value) ---');
+    lines.add(_describeJsValue(err));
+  }
+  return lines.join('\n');
+}
+
+String _describeJsValue(JSAny? value) {
+  if (value == null) {
+    return '(null)';
+  }
+  if (value.isA<JSString>()) {
+    return (value as JSString).toDart;
+  }
+  if (value.isA<JSNumber>()) {
+    return (value as JSNumber).toDartDouble.toString();
+  }
+  if (value.isA<JSBoolean>()) {
+    return (value as JSBoolean).toDart.toString();
+  }
+  final obj = value as JSObject;
+  final stack = _readPropertyAsDartString(obj, 'stack');
+  if (stack.isNotEmpty) {
+    final buf = StringBuffer();
+    final name = _readPropertyAsDartString(obj, 'name');
+    final msg = _readPropertyAsDartString(obj, 'message');
+    if (name.isNotEmpty) {
+      buf.writeln('name: $name');
+    }
+    if (msg.isNotEmpty) {
+      buf.writeln('message: $msg');
+    }
+    buf.write('stack:\n$stack');
+    return buf.toString().trimRight();
+  }
+  try {
+    final d = value.dartify();
+    return 'dartify: $d';
+  } catch (_) {
+    return value.toString();
+  }
+}
+
+String _readPropertyAsDartString(JSObject o, String key) {
+  try {
+    final v = o[key];
+    if (v == null) {
+      return '';
+    }
+    if (v.isA<JSString>()) {
+      return (v as JSString).toDart;
+    }
+    return v.toString();
+  } catch (_) {
+    return '';
   }
 }
