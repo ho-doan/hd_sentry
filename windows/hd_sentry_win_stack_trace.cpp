@@ -34,6 +34,22 @@ void BasenameOnly(char* path) {
   }
 }
 
+void AppendSourceLineIfPresent(HANDLE process,
+                               void* addr,
+                               std::ostringstream& out) {
+  IMAGEHLP_LINE64 line = {};
+  line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+  DWORD64 line_displacement = 0;
+  if (!SymGetLineFromAddr64(process, reinterpret_cast<DWORD64>(addr),
+                             &line_displacement, &line)) {
+    return;
+  }
+  if (line.FileName == nullptr || line.FileName[0] == '\0') {
+    return;
+  }
+  out << " (" << line.FileName << ":" << line.LineNumber << ")";
+}
+
 }  // namespace
 
 void WinStackTraceEnsureInitialized() {
@@ -69,6 +85,7 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
       if (displacement != 0) {
         out << "+0x" << std::hex << displacement << std::dec;
       }
+      AppendSourceLineIfPresent(process, addr, out);
       out << " [0x" << std::hex << std::setw(sizeof(void*) * 2)
           << reinterpret_cast<uintptr_t>(addr) << std::dec << "]\n";
       continue;
@@ -96,12 +113,15 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
       }
       const auto base = reinterpret_cast<uintptr_t>(module);
       const auto offset = reinterpret_cast<uintptr_t>(addr) - base;
-      out << path << "+0x" << std::hex << offset << std::dec << " [0x"
-          << std::hex << std::setw(sizeof(void*) * 2)
+      out << path << "+0x" << std::hex << offset << std::dec;
+      AppendSourceLineIfPresent(process, addr, out);
+      out << " [0x" << std::hex << std::setw(sizeof(void*) * 2)
           << reinterpret_cast<uintptr_t>(addr) << std::dec << "]\n";
     } else {
       out << "0x" << std::hex << std::setw(sizeof(void*) * 2)
-          << reinterpret_cast<uintptr_t>(addr) << std::dec << '\n';
+          << reinterpret_cast<uintptr_t>(addr) << std::dec;
+      AppendSourceLineIfPresent(process, addr, out);
+      out << '\n';
     }
   }
 

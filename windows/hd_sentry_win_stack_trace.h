@@ -12,7 +12,7 @@ namespace hd_sentry {
 /// One-time dbghelp init for the current process (safe to call from Install).
 void WinStackTraceEnsureInitialized();
 
-/// Resolves raw return addresses to symbol + module+offset (UTF-8 text).
+/// Resolves raw return addresses to symbol, optional source (file:line), and module+offset.
 std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count);
 
 }  // namespace hd_sentry
