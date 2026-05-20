@@ -107,9 +107,9 @@ message: ...
 
 Trên **Windows**, stack trong file `.txt` dùng **dbghelp** (`SymFromAddr`, `SymGetLineFromAddr64` / bản Unicode tương ứng) khi có PDB đủ bảng dòng (`/Zi`, linker `/DEBUG`).
 
-Trên **Linux**, stack native dùng `backtrace` / `dladdr` (glibc). Build **debug** hoặc giữ symbol (`-g`, không strip) để thấy tên hàm thay vì chỉ địa chỉ; có thể dùng `addr2line -e <binary> <addr>` với các dòng trong báo cáo.
+Trên **Linux** (chưa hoàn thiện), stack native dùng `backtrace` / `dladdr` (glibc). Build **debug** hoặc giữ symbol (`-g`, không strip) để thấy tên hàm thay vì chỉ địa chỉ; có thể dùng `addr2line -e <binary> <addr>` với các dòng trong báo cáo.
 
-**gdb (Linux core):** build **debug** (`flutter run -d linux` / `flutter build linux --debug`). Trong thư mục crash có `crash_<millis>.gdb` — chạy:
+**gdb (Linux core):** (chưa hoàn thiện) build **debug** (`flutter run -d linux` / `flutter build linux --debug`). Trong thư mục crash có `crash_<millis>.gdb` — chạy:
 
 ```bash
 gdb -x ~/.local/share/hd_sentry_crashes/crash_<millis>.gdb \
