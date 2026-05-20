@@ -13,6 +13,9 @@ class HdSentryHostApiImpl : public HdSentryHostApi {
   ErrorOr<std::string> ReadCrashFile(const std::string& file_name) override;
   ErrorOr<bool> DeleteCrashFile(const std::string& file_name) override;
   std::optional<FlutterError> ClearAllCrashFiles() override;
+  std::optional<FlutterError> CaptureException(
+      const std::string& message,
+      const std::string* stack_trace) override;
 };
 
 }  // namespace hd_sentry

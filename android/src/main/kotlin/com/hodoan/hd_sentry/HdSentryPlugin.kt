@@ -36,6 +36,16 @@ class HdSentryPlugin : FlutterPlugin, HdSentryHostApi {
         HdSentryCrashStore.clearAll()
     }
 
+    override fun captureException(message: String, stackTrace: String?) {
+        ensureStoreConfigured()
+        HdSentryCrashStore.writeReport(
+            platform = "android",
+            type = "flutter_error",
+            message = message,
+            stackTrace = stackTrace.orEmpty(),
+        )
+    }
+
     private fun ensureStoreConfigured() {
         if (applicationContext != null) {
             HdSentryCrashStore.configure(applicationContext!!)

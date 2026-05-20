@@ -9,11 +9,16 @@
 namespace hd_sentry {
 namespace {
 
+volatile sig_atomic_t g_crash_report_written = 0;
+
 void SignalHandler(int signal) {
-  HdSentryCrashStore::WriteReport(
-      "linux", "signal", std::string("Signal ") + std::to_string(signal),
-      "");
   std::signal(signal, SIG_DFL);
+  if (g_crash_report_written == 0) {
+    g_crash_report_written = 1;
+    HdSentryCrashStore::WriteReport(
+        "linux", "signal", std::string("Signal ") + std::to_string(signal),
+        "");
+  }
   std::raise(signal);
 }
 

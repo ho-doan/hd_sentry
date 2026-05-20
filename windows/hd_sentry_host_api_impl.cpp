@@ -37,4 +37,13 @@ std::optional<FlutterError> HdSentryHostApiImpl::ClearAllCrashFiles() {
   return std::nullopt;
 }
 
+std::optional<FlutterError> HdSentryHostApiImpl::CaptureException(
+    const std::string& message,
+    const std::string* stack_trace) {
+  HdSentryCrashStore::WriteReport(
+      "windows", "flutter_error", message,
+      stack_trace != nullptr ? *stack_trace : "");
+  return std::nullopt;
+}
+
 }  // namespace hd_sentry

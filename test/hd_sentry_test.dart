@@ -33,6 +33,22 @@ message: boom
 
   @override
   Future<String> readCrashFile(String fileName) async => files[fileName]!;
+
+  final List<(String, String?)> captured = [];
+
+  @override
+  Future<void> captureException(String message, String? stackTrace) async {
+    captured.add((message, stackTrace));
+    files['flutter_${captured.length}.txt'] = '''
+=== HD Sentry Native Crash Report ===
+platform: test
+type: flutter_error
+message: $message
+
+--- stack trace ---
+${stackTrace ?? ''}
+''';
+  }
 }
 
 void main() {
@@ -45,6 +61,14 @@ void main() {
     expect(reports.first.platform, 'test');
     expect(reports.first.type, 'uncaught_exception');
     expect(reports.first.message, 'boom');
+  });
+
+  test('captureException stores flutter_error report', () async {
+    final backend = FakeHdSentryBackend();
+    await backend.captureException('layout overflow', 'stack');
+    expect(backend.captured, hasLength(1));
+    final reports = await backend.listCrashReports();
+    expect(reports.any((r) => r.type == 'flutter_error'), isTrue);
   });
 
   test('HdSentry delegates to backend', () async {

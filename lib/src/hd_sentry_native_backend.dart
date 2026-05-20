@@ -7,7 +7,7 @@ HdSentryBackend createBackend() => HdSentryNativeBackend();
 /// Pigeon host implementation for mobile and desktop platforms.
 class HdSentryNativeBackend extends HdSentryBackend {
   HdSentryNativeBackend({HdSentryHostApi? host})
-      : _host = host ?? HdSentryHostApi();
+    : _host = host ?? HdSentryHostApi();
 
   final HdSentryHostApi _host;
 
@@ -21,7 +21,8 @@ class HdSentryNativeBackend extends HdSentryBackend {
   Future<List<String>> listCrashFileNames() => _host.listCrashFileNames();
 
   @override
-  Future<String> readCrashFile(String fileName) => _host.readCrashFile(fileName);
+  Future<String> readCrashFile(String fileName) =>
+      _host.readCrashFile(fileName);
 
   @override
   Future<bool> deleteCrashFile(String fileName) =>
@@ -29,4 +30,8 @@ class HdSentryNativeBackend extends HdSentryBackend {
 
   @override
   Future<void> clearAllCrashFiles() => _host.clearAllCrashFiles();
+
+  @override
+  Future<void> captureException(String message, String? stackTrace) =>
+      _host.captureException(message, stackTrace);
 }

@@ -12,7 +12,11 @@ dependencies:
 
 ## Khởi tạo
 
-Gọi càng sớm càng tốt (trước `runApp`):
+Gọi càng sớm càng tốt (trước `runApp`). `initialize()` tự gắn:
+
+- Native crash handlers (signal / uncaught exception)
+- `FlutterError.onError` (lỗi framework Flutter)
+- `PlatformDispatcher.instance.onError` (lỗi async / isolate)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -23,6 +27,13 @@ Future<void> main() async {
   await HdSentry.initialize();
   runApp(const MyApp());
 }
+```
+
+Ghi tay lỗi Dart:
+
+```dart
+await HdSentry.captureException('something failed', stackTrace);
+await HdSentry.captureError(error, stackTrace);
 ```
 
 ## Đọc crash từ Dart
@@ -46,7 +57,7 @@ await HdSentry.clearAllCrashFiles();
 ## Nền tảng được hỗ trợ
 
 | Nền tảng | Cơ chế bắt crash | Lưu trữ |
-|----------|------------------|---------|
+| ---------- | ------------------ | --------- |
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
 | iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
 | Windows | `SetUnhandledExceptionFilter` | `%LOCALAPPDATA%/hd_sentry_crashes/` |
@@ -55,7 +66,7 @@ await HdSentry.clearAllCrashFiles();
 
 ## Định dạng file
 
-```
+```txt
 === HD Sentry Native Crash Report ===
 platform: android
 timestamp: 2026-05-19T12:00:00.000Z
@@ -66,9 +77,19 @@ message: ...
 ...
 ```
 
+## Loại báo cáo (`type`)
+
+| type | Nguồn |
+|------|--------|
+| `flutter_error` | `captureException` / Flutter error hooks |
+| `uncaught_exception` | Native uncaught (Android Java, iOS NSException, …) |
+| `signal` | Native signal (iOS/macOS/Linux) |
+| `window_error` / `unhandled_rejection` | Web JS |
+
 ## Lưu ý
 
-- Plugin bắt crash **native / JS**, không thay thế bắt lỗi Dart (`FlutterError`, `runZonedGuarded`, Sentry Flutter SDK, …).
+- `initialize()` đã bắt lỗi Flutter; không cần gán `FlutterError.onError` thủ công trừ khi bạn muốn logic riêng (handler cũ vẫn được gọi sau khi ghi file).
+- Crash **native** vẫn do handler native bắt; `captureException` dùng cho lỗi Dart/Flutter.
 - Sau khi ghi file, crash vẫn được chuyển tiếp cho handler mặc định của hệ điều hành.
 - Trên iOS/macOS, signal handler chỉ ghi báo cáo tối thiểu rồi re-raise signal.
 

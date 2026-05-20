@@ -68,7 +68,8 @@ enum HdSentryCrashStore {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     let timestamp = formatter.string(from: Date())
-    let fileName = "\(filePrefix)\(Int(Date().timeIntervalSince1970 * 1000))\(fileSuffix)"
+    let fileName =
+      "\(filePrefix)\(Int(Date().timeIntervalSince1970 * 1000))_\(UUID().uuidString.prefix(8))\(fileSuffix)"
     var body = """
     === HD Sentry Native Crash Report ===
     platform: \(platform)

@@ -70,6 +70,8 @@ interface HdSentryHostApi {
   fun deleteCrashFile(fileName: String): Boolean
   /** Deletes all crash reports in [getCrashDirectory]. */
   fun clearAllCrashFiles()
+  /** Captures an exception. */
+  fun captureException(message: String, stackTrace: String?)
 
   companion object {
     /** The codec used by HdSentryHostApi. */
@@ -166,6 +168,25 @@ interface HdSentryHostApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               api.clearAllCrashFiles()
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.captureException$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val messageArg = args[0] as String
+            val stackTraceArg = args[1] as String?
+            val wrapped: List<Any?> = try {
+              api.captureException(messageArg, stackTraceArg)
               listOf(null)
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)

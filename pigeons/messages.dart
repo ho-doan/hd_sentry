@@ -9,8 +9,8 @@ import 'package:pigeon/pigeon.dart';
     kotlinOptions: KotlinOptions(package: 'com.hodoan.hd_sentry'),
     swiftOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.swift',
     swiftOptions: SwiftOptions(),
-    objcHeaderOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.h',
-    objcSourceOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.m',
+    // objcHeaderOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.h',
+    // objcSourceOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.m',
     cppHeaderOut: 'windows/messages.g.h',
     cppSourceOut: 'windows/messages.g.cpp',
     cppOptions: CppOptions(namespace: 'hd_sentry'),
@@ -43,4 +43,7 @@ abstract class HdSentryHostApi {
 
   /// Deletes all crash reports in [getCrashDirectory].
   void clearAllCrashFiles();
+
+  /// Captures an exception.
+  void captureException(String message, [String? stackTrace]);
 }

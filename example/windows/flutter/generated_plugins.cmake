@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  crash_native_demo
   hd_sentry
 )
 

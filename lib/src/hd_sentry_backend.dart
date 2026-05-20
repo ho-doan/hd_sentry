@@ -30,4 +30,6 @@ abstract class HdSentryBackend {
     });
     return reports;
   }
+
+  Future<void> captureException(String message, String? stackTrace);
 }

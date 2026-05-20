@@ -30,4 +30,13 @@ public class HdSentryPlugin: NSObject, FlutterPlugin, HdSentryHostApi {
   public func clearAllCrashFiles() throws {
     try HdSentryCrashStore.clearAll()
   }
+
+  public func captureException(message: String, stackTrace: String?) throws {
+    try HdSentryCrashStore.writeReport(
+      platform: "macos",
+      type: "flutter_error",
+      message: message,
+      stackTrace: stackTrace ?? ""
+    )
+  }
 }

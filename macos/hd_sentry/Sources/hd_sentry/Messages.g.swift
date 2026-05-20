@@ -99,6 +99,8 @@ protocol HdSentryHostApi {
   func deleteCrashFile(fileName: String) throws -> Bool
   /// Deletes all crash reports in [getCrashDirectory].
   func clearAllCrashFiles() throws
+  /// Captures an exception.
+  func captureException(message: String, stackTrace: String?) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -194,6 +196,23 @@ class HdSentryHostApiSetup {
       }
     } else {
       clearAllCrashFilesChannel.setMessageHandler(nil)
+    }
+    /// Captures an exception.
+    let captureExceptionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.captureException\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      captureExceptionChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let messageArg = args[0] as! String
+        let stackTraceArg: String? = nilOrValue(args[1])
+        do {
+          try api.captureException(message: messageArg, stackTrace: stackTraceArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      captureExceptionChannel.setMessageHandler(nil)
     }
   }
 }

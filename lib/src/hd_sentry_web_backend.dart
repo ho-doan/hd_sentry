@@ -55,11 +55,7 @@ $stack
   }) {
     final store = _loadStore();
     final fileName = 'crash_${DateTime.now().millisecondsSinceEpoch}.txt';
-    store[fileName] = _formatReport(
-      type: type,
-      message: message,
-      stack: stack,
-    );
+    store[fileName] = _formatReport(type: type, message: message, stack: stack);
     _saveStore(store);
   }
 
@@ -91,7 +87,10 @@ $stack
     }
 
     web.window.addEventListener('error', onError.toJS);
-    web.window.addEventListener('unhandledrejection', onUnhandledRejection.toJS);
+    web.window.addEventListener(
+      'unhandledrejection',
+      onUnhandledRejection.toJS,
+    );
   }
 
   @override
@@ -131,5 +130,14 @@ $stack
   @override
   Future<void> clearAllCrashFiles() async {
     web.window.localStorage.removeItem(_storageKey);
+  }
+
+  @override
+  Future<void> captureException(String message, String? stackTrace) async {
+    _persistCrash(
+      type: 'flutter_error',
+      message: message,
+      stack: stackTrace ?? '',
+    );
   }
 }

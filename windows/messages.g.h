@@ -92,6 +92,10 @@ class HdSentryHostApi {
   virtual ErrorOr<bool> DeleteCrashFile(const std::string& file_name) = 0;
   // Deletes all crash reports in [getCrashDirectory].
   virtual std::optional<FlutterError> ClearAllCrashFiles() = 0;
+  // Captures an exception.
+  virtual std::optional<FlutterError> CaptureException(
+    const std::string& message,
+    const std::string* stack_trace) = 0;
 
   // The codec used by HdSentryHostApi.
   static const flutter::StandardMessageCodec& GetCodec();

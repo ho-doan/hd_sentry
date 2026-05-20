@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+
+import 'src/flutter_error_hooks.dart';
 import 'src/hd_sentry_backend.dart';
 import 'src/hd_sentry_backend_selector.dart';
 import 'src/models/native_crash_report.dart';
@@ -11,10 +14,13 @@ class HdSentry {
   static final HdSentryBackend _backend = createHdSentryBackend();
   static bool _initialized = false;
 
-  /// Installs platform crash handlers. Call before [runApp].
-  static Future<void> initialize() async {
+  /// Installs native crash handlers and Flutter error hooks. Call before [runApp].
+  static Future<void> initialize({bool captureFlutterErrors = true}) async {
     if (_initialized) return;
     await _backend.initialize();
+    if (captureFlutterErrors) {
+      HdSentryFlutterErrorHooks.install(_backend);
+    }
     _initialized = true;
   }
 
@@ -39,4 +45,24 @@ class HdSentry {
 
   /// Deletes all stored crash reports.
   static Future<void> clearAllCrashFiles() => _backend.clearAllCrashFiles();
+
+  /// Persists a Flutter/Dart error to the same crash store as native reports.
+  static Future<void> captureException(String message, [String? stackTrace]) =>
+      _backend.captureException(message, stackTrace);
+
+  /// Convenience wrapper for [Object] + [StackTrace].
+  static Future<void> captureError(
+    Object error, [
+    StackTrace? stackTrace,
+  ]) =>
+      captureException(error.toString(), stackTrace?.toString());
+
+  /// Persists a [FlutterErrorDetails] from [FlutterError.onError].
+  static Future<void> captureFlutterErrorDetails(
+    FlutterErrorDetails details,
+  ) =>
+      captureException(
+        details.exceptionAsString(),
+        details.stack?.toString(),
+      );
 }
