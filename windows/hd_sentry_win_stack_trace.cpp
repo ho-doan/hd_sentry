@@ -85,9 +85,12 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
         path[0] = '\0';
       }
       if (path[0] == '\0') {
-        const char* fallback = "(unknown module)";
-        std::strncpy(path, fallback, sizeof(path) - 1);
-        path[sizeof(path) - 1] = '\0';
+        static const char kUnknown[] = "(unknown module)";
+        size_t j = 0;
+        for (; kUnknown[j] != '\0' && j < sizeof(path) - 1; ++j) {
+          path[j] = kUnknown[j];
+        }
+        path[j] = '\0';
       } else {
         BasenameOnly(path);
       }
