@@ -1,9 +1,11 @@
-#include "hd_sentry_linux_stack_trace.h"
-
 #define _GNU_SOURCE
+
+#include "hd_sentry_linux_stack_trace.h"
 
 #include <dlfcn.h>
 #include <execinfo.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,14 +33,17 @@ static gchar* format_with_dladdr(void* const* frames, gint count) {
   for (gint i = 0; i < count; ++i) {
     Dl_info info;
     if (dladdr(frames[i], &info) != 0) {
-      const gsize offset =
-          info.dli_saddr != NULL
-              ? (gsize)((char*)frames[i] - (char*)info.dli_saddr)
-              : 0;
-      g_string_append_printf(
-          out, "#%d %p %s+%#zx (%s)\n", i, frames[i],
-          info.dli_sname != NULL ? info.dli_sname : "??",
-          offset, info.dli_fname != NULL ? info.dli_fname : "??");
+      const uintptr_t frame_addr = (uintptr_t)frames[i];
+      const uintptr_t sym_addr =
+          info.dli_saddr != NULL ? (uintptr_t)info.dli_saddr : 0;
+      const uintptr_t offset =
+          sym_addr != 0 ? frame_addr - sym_addr : 0;
+      const char* sym_name =
+          info.dli_sname != NULL ? info.dli_sname : "??";
+      const char* obj_name =
+          info.dli_fname != NULL ? info.dli_fname : "??";
+      g_string_append_printf(out, "#%d %p %s+0x%" PRIxPTR " (%s)\n", i,
+                             frames[i], sym_name, offset, obj_name);
     } else {
       g_string_append_printf(out, "#%d %p ??\n", i, frames[i]);
     }
