@@ -270,17 +270,27 @@ gchar* hd_sentry_crash_store_write_native_crash(
   g_autofree gchar* full_path =
       g_build_filename(g_crash_directory, file_name, NULL);
 
-  const gboolean dump_ok = hd_sentry_linux_crash_dump_write(
-      g_crash_directory, stem, signo, info, ucontext);
+  (void)hd_sentry_linux_crash_dump_write(g_crash_directory, stem, signo, info,
+                                         ucontext);
 
-  g_autofree gchar* footer = NULL;
-  if (dump_ok) {
-    footer = g_strdup_printf(
-        "\n--- core dump (gdb/lldb) ---\n%s%s\n"
-        "--- memory maps ---\n%s%s\n",
-        stem, HD_SENTRY_DUMP_SUFFIX, stem, HD_SENTRY_MAPS_SUFFIX);
+  g_autofree gchar* dump_path = g_strdup_printf(
+      "%s/%s%s", g_crash_directory, stem, HD_SENTRY_DUMP_SUFFIX);
+  g_autofree gchar* maps_path = g_strdup_printf(
+      "%s/%s%s", g_crash_directory, stem, HD_SENTRY_MAPS_SUFFIX);
+
+  GString* footer = g_string_new(NULL);
+  if (g_file_test(dump_path, G_FILE_TEST_IS_REGULAR)) {
+    g_string_append_printf(footer,
+                           "\n--- core dump (gdb/lldb) ---\n%s%s\n",
+                           stem, HD_SENTRY_DUMP_SUFFIX);
+  }
+  if (g_file_test(maps_path, G_FILE_TEST_IS_REGULAR)) {
+    g_string_append_printf(footer, "--- memory maps ---\n%s%s\n", stem,
+                           HD_SENTRY_MAPS_SUFFIX);
   }
 
-  write_text_report(full_path, platform, type, message, stack_trace, footer);
+  write_text_report(full_path, platform, type, message, stack_trace,
+                    footer->len > 0 ? footer->str : NULL);
+  g_string_free(footer, TRUE);
   return g_strdup(file_name);
 }

@@ -19,9 +19,15 @@
 #define HD_SENTRY_DUMP_SUFFIX ".dmp"
 #define HD_SENTRY_MAPS_SUFFIX ".maps"
 #define HD_SENTRY_CORE_BUF_SIZE (512 * 1024)
-#define HD_SENTRY_STACK_DUMP_BYTES (64 * 1024)
-
 static uint8_t g_core_buffer[HD_SENTRY_CORE_BUF_SIZE];
+
+#if defined(__x86_64__) || defined(__aarch64__)
+static HdSentryElfPrstatus g_prstatus;
+#endif
+
+static size_t align4(size_t value) {
+  return (value + 3U) & ~((size_t)3U);
+}
 
 static gboolean copy_proc_file(const char* src_path, const char* dest_path) {
   const int in_fd = open(src_path, O_RDONLY);
@@ -68,55 +74,30 @@ void hd_sentry_linux_crash_dump_configure(void) {
 
 #if defined(__x86_64__) || defined(__aarch64__)
 
-typedef struct {
-  uint8_t* base;
-  size_t capacity;
-  size_t offset;
-} HdSentryCoreWriter;
-
-static void writer_init(HdSentryCoreWriter* w) {
-  w->base = g_core_buffer;
-  w->capacity = HD_SENTRY_CORE_BUF_SIZE;
-  w->offset = 0;
-}
-
-static gboolean writer_append(HdSentryCoreWriter* w, const void* data,
-                              size_t size) {
-  if (w->offset + size > w->capacity) {
+static gboolean buffer_append(size_t* offset, const void* data, size_t size) {
+  if (*offset + size > HD_SENTRY_CORE_BUF_SIZE) {
     return FALSE;
   }
-  memcpy(w->base + w->offset, data, size);
-  w->offset += size;
+  memcpy(g_core_buffer + *offset, data, size);
+  *offset += size;
   return TRUE;
 }
 
-static size_t writer_align4(HdSentryCoreWriter* w) {
-  const size_t padding = (4 - (w->offset % 4)) % 4;
-  if (padding == 0) {
-    return w->offset;
-  }
-  static const uint8_t zero_pad[3] = {0, 0, 0};
-  if (!writer_append(w, zero_pad, padding)) {
-    return 0;
-  }
-  return w->offset;
-}
-
-static gboolean writer_note(HdSentryCoreWriter* w, const char* name, int type,
-                            const void* desc, size_t desc_size) {
+static gboolean buffer_append_note(size_t* offset, const char* name, int type,
+                                   const void* desc, size_t desc_size) {
   Elf64_Nhdr nhdr;
   nhdr.n_namesz = (Elf64_Word)(strlen(name) + 1);
   nhdr.n_descsz = (Elf64_Word)desc_size;
   nhdr.n_type = (Elf64_Word)type;
-  if (!writer_append(w, &nhdr, sizeof(nhdr)) ||
-      !writer_append(w, name, nhdr.n_namesz)) {
+  if (!buffer_append(offset, &nhdr, sizeof(nhdr)) ||
+      !buffer_append(offset, name, nhdr.n_namesz)) {
     return FALSE;
   }
-  writer_align4(w);
-  if (!writer_append(w, desc, desc_size)) {
+  *offset = align4(*offset);
+  if (!buffer_append(offset, desc, desc_size)) {
     return FALSE;
   }
-  writer_align4(w);
+  *offset = align4(*offset);
   return TRUE;
 }
 
@@ -125,25 +106,10 @@ static gboolean writer_note(HdSentryCoreWriter* w, const char* name, int type,
 static gboolean fill_prstatus(const ucontext_t* uc, HdSentryElfPrstatus* pr) {
   memset(pr, 0, sizeof(*pr));
   pr->pr_pid = getpid();
-  pr->pr_ppid = getppid();
-  pr->pr_pgrp = getpgrp();
-  pr->pr_sid = getsid(0);
-  memcpy(&pr->pr_reg, &uc->uc_mcontext.gregs, sizeof(pr->pr_reg));
-  return TRUE;
-}
-
-static gboolean stack_region_from_uc(const ucontext_t* uc, uintptr_t* start,
-                                     size_t* length) {
-  const uintptr_t sp = (uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
-  if (sp == 0) {
+  if (uc == NULL) {
     return FALSE;
   }
-  const uintptr_t end = sp + HD_SENTRY_STACK_DUMP_BYTES;
-  *start = sp & ~(uintptr_t)0xFFF;
-  *length = end - *start;
-  if (*length > HD_SENTRY_STACK_DUMP_BYTES + 4096) {
-    *length = HD_SENTRY_STACK_DUMP_BYTES + 4096;
-  }
+  memcpy(&pr->pr_reg, &uc->uc_mcontext.gregs, sizeof(pr->pr_reg));
   return TRUE;
 }
 
@@ -152,45 +118,47 @@ static gboolean stack_region_from_uc(const ucontext_t* uc, uintptr_t* start,
 static gboolean fill_prstatus(const ucontext_t* uc, HdSentryElfPrstatus* pr) {
   memset(pr, 0, sizeof(*pr));
   pr->pr_pid = getpid();
-  pr->pr_ppid = getppid();
-  pr->pr_pgrp = getpgrp();
-  pr->pr_sid = getsid(0);
-  memcpy(&pr->pr_reg, &uc->uc_mcontext, sizeof(pr->pr_reg));
-  return TRUE;
-}
-
-static gboolean stack_region_from_uc(const ucontext_t* uc, uintptr_t* start,
-                                     size_t* length) {
-  const uintptr_t sp = (uintptr_t)uc->uc_mcontext.sp;
-  if (sp == 0) {
+  if (uc == NULL) {
     return FALSE;
   }
-  const uintptr_t end = sp + HD_SENTRY_STACK_DUMP_BYTES;
-  *start = sp & ~(uintptr_t)0xFFF;
-  *length = end - *start;
-  if (*length > HD_SENTRY_STACK_DUMP_BYTES + 4096) {
-    *length = HD_SENTRY_STACK_DUMP_BYTES + 4096;
-  }
+  memcpy(&pr->pr_reg, &uc->uc_mcontext, sizeof(pr->pr_reg));
   return TRUE;
 }
 
 #endif
 
+static gboolean write_file_bytes(const char* path, const void* data,
+                                 size_t size) {
+  const int out_fd =
+      open(path, O_WRONLY | O_CREAT | O_TRUNC, (mode_t)0644);
+  if (out_fd < 0) {
+    return FALSE;
+  }
+
+  const uint8_t* bytes = data;
+  size_t written_total = 0;
+  while (written_total < size) {
+    const ssize_t n =
+        write(out_fd, bytes + written_total, size - written_total);
+    if (n < 0) {
+      close(out_fd);
+      unlink(path);
+      return FALSE;
+    }
+    written_total += (size_t)n;
+  }
+  close(out_fd);
+  return TRUE;
+}
+
 static gboolean write_elf_core(const char* path, gint signo,
                                const siginfo_t* info, const ucontext_t* uc) {
-  uintptr_t stack_start = 0;
-  size_t stack_length = 0;
-  const gboolean has_stack =
-      uc != NULL && stack_region_from_uc(uc, &stack_start, &stack_length);
-
-  HdSentryElfPrstatus prstatus;
-  if (uc == NULL || !fill_prstatus(uc, &prstatus)) {
-    memset(&prstatus, 0, sizeof(prstatus));
-    prstatus.pr_pid = getpid();
-  }
+  memset(&g_prstatus, 0, sizeof(g_prstatus));
+  g_prstatus.pr_pid = getpid();
+  (void)fill_prstatus(uc, &g_prstatus);
   if (signo > 0) {
-    prstatus.pr_cursig = (short)signo;
-    prstatus.pr_info.si_signo = signo;
+    g_prstatus.pr_cursig = (short)signo;
+    g_prstatus.pr_info.si_signo = signo;
   }
 
   HdSentryElfSiginfo elf_siginfo;
@@ -203,33 +171,20 @@ static gboolean write_elf_core(const char* path, gint signo,
     elf_siginfo.si_signo = signo;
   }
 
-  const int phdr_count = has_stack ? 2 : 1;
   const size_t ehdr_size = sizeof(Elf64_Ehdr);
-  const size_t phdrs_size = (size_t)phdr_count * sizeof(Elf64_Phdr);
-  const size_t notes_offset = ehdr_size + phdrs_size;
+  const size_t phdr_size = sizeof(Elf64_Phdr);
+  const size_t notes_offset = ehdr_size + phdr_size;
 
-  HdSentryCoreWriter writer;
-  writer_init(&writer);
-  writer.offset = notes_offset;
-
-  if (!writer_note(&writer, "CORE", HD_SENTRY_NT_PRSTATUS, &prstatus,
-                   sizeof(prstatus)) ||
-      !writer_note(&writer, "CORE", HD_SENTRY_NT_SIGINFO, &elf_siginfo,
-                   sizeof(elf_siginfo))) {
+  size_t cursor = notes_offset;
+  if (!buffer_append_note(&cursor, "CORE", HD_SENTRY_NT_PRSTATUS, &g_prstatus,
+                          sizeof(g_prstatus)) ||
+      !buffer_append_note(&cursor, "CORE", HD_SENTRY_NT_SIGINFO, &elf_siginfo,
+                          sizeof(elf_siginfo))) {
     return FALSE;
   }
 
-  const size_t notes_size = writer.offset - notes_offset;
-  size_t load_offset = writer.offset;
-  if (has_stack) {
-    if (load_offset + stack_length > writer.capacity) {
-      return FALSE;
-    }
-    memcpy(writer.base + load_offset, (const void*)stack_start, stack_length);
-    writer.offset = load_offset + stack_length;
-  }
-
-  const size_t file_size = writer.offset;
+  const size_t file_size = cursor;
+  const size_t notes_size = file_size - notes_offset;
 
   Elf64_Ehdr ehdr;
   memset(&ehdr, 0, sizeof(ehdr));
@@ -249,8 +204,8 @@ static gboolean write_elf_core(const char* path, gint signo,
   ehdr.e_version = EV_CURRENT;
   ehdr.e_phoff = ehdr_size;
   ehdr.e_ehsize = (Elf64_Half)ehdr_size;
-  ehdr.e_phentsize = sizeof(Elf64_Phdr);
-  ehdr.e_phnum = (Elf64_Half)phdr_count;
+  ehdr.e_phentsize = (Elf64_Half)phdr_size;
+  ehdr.e_phnum = 1;
 
   Elf64_Phdr note_phdr;
   memset(&note_phdr, 0, sizeof(note_phdr));
@@ -259,45 +214,10 @@ static gboolean write_elf_core(const char* path, gint signo,
   note_phdr.p_filesz = notes_size;
   note_phdr.p_align = 4;
 
-  Elf64_Phdr load_phdr;
-  if (has_stack) {
-    memset(&load_phdr, 0, sizeof(load_phdr));
-    load_phdr.p_type = PT_LOAD;
-    load_phdr.p_flags = PF_R | PF_W;
-    load_phdr.p_offset = load_offset;
-    load_phdr.p_vaddr = stack_start;
-    load_phdr.p_paddr = stack_start;
-    load_phdr.p_filesz = stack_length;
-    load_phdr.p_memsz = stack_length;
-    load_phdr.p_align = 4096;
-  }
-
   memcpy(g_core_buffer, &ehdr, sizeof(ehdr));
   memcpy(g_core_buffer + ehdr_size, &note_phdr, sizeof(note_phdr));
-  if (has_stack) {
-    memcpy(g_core_buffer + ehdr_size + sizeof(note_phdr), &load_phdr,
-           sizeof(load_phdr));
-  }
 
-  const int out_fd =
-      open(path, O_WRONLY | O_CREAT | O_TRUNC, (mode_t)0644);
-  if (out_fd < 0) {
-    return FALSE;
-  }
-
-  ssize_t written_total = 0;
-  while ((size_t)written_total < file_size) {
-    const ssize_t n = write(out_fd, g_core_buffer + written_total,
-                            file_size - (size_t)written_total);
-    if (n < 0) {
-      close(out_fd);
-      unlink(path);
-      return FALSE;
-    }
-    written_total += n;
-  }
-  close(out_fd);
-  return TRUE;
+  return write_file_bytes(path, g_core_buffer, file_size);
 }
 
 #else
@@ -330,9 +250,6 @@ gboolean hd_sentry_linux_crash_dump_write(const gchar* crash_dir,
       g_strdup_printf("%s/%s%s", crash_dir, stem, HD_SENTRY_DUMP_SUFFIX);
   const ucontext_t* uc = (const ucontext_t*)ucontext;
   const gboolean core_ok = write_elf_core(dump_path, signo, info, uc);
-  if (!core_ok) {
-    unlink(dump_path);
-  }
 
   return maps_ok || core_ok;
 }
