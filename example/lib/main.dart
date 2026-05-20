@@ -5,12 +5,6 @@ import 'package:crash_native_demo/crash_native_demo.dart' as crash_native_demo;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await HdSentry.initialize();
-  FlutterError.onError = (details) {
-    HdSentry.captureException(
-      details.exception.toString(),
-      details.stack?.toString(),
-    );
-  };
   runApp(const MyApp());
 }
 
