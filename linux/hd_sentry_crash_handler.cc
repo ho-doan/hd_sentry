@@ -1,6 +1,7 @@
 #include "hd_sentry_crash_handler.h"
 
 #include "hd_sentry_crash_store.h"
+#include "hd_sentry_linux_stack_trace.h"
 
 #include <exception>
 
@@ -12,12 +13,17 @@ void TerminateHandler() {
     if (exception) {
       std::rethrow_exception(exception);
     }
-    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown", "");
+    g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
+    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown",
+                                       stack);
   } catch (const std::exception& error) {
+    g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
     hd_sentry_crash_store_write_report("linux", "std_terminate", error.what(),
-                                       "");
+                                       stack);
   } catch (...) {
-    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown", "");
+    g_autofree gchar* stack = hd_sentry_linux_stack_trace_capture_skip(1);
+    hd_sentry_crash_store_write_report("linux", "std_terminate", "unknown",
+                                       stack);
   }
   std::abort();
 }

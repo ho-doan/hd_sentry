@@ -106,6 +106,8 @@ message: ...
 
 Trên **Windows**, stack trong file `.txt` dùng **dbghelp** (`SymFromAddr`, `SymGetLineFromAddr64` / bản Unicode tương ứng) khi có PDB đủ bảng dòng (`/Zi`, linker `/DEBUG`).
 
+Trên **Linux**, stack native dùng `backtrace` / `dladdr` (glibc). Build **debug** hoặc giữ symbol (`-g`, không strip) để thấy tên hàm thay vì chỉ địa chỉ; có thể dùng `addr2line -e <binary> <addr>` với các dòng trong báo cáo.
+
 ## Regenerate Pigeon
 
 ```bash

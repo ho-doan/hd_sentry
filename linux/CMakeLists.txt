@@ -18,6 +18,7 @@ list(APPEND PLUGIN_SOURCES
   "hd_sentry_host_api_impl.c"
   "hd_sentry_crash_store.c"
   "hd_sentry_crash_handler.c"
+  "hd_sentry_linux_stack_trace.c"
   "messages.g.cc"
 )
 
@@ -46,6 +47,9 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
+target_link_libraries(${PLUGIN_NAME} PRIVATE dl)
+# Export symbols so backtrace_symbols can resolve function names when possible.
+target_link_options(${PLUGIN_NAME} PRIVATE -Wl,--export-dynamic)
 
 # List of absolute paths to libraries that should be bundled with the plugin.
 # This list could contain prebuilt libraries, or libraries created by an

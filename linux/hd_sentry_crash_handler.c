@@ -1,6 +1,7 @@
 #include "hd_sentry_crash_handler.h"
 
 #include "hd_sentry_crash_store.h"
+#include "hd_sentry_linux_stack_trace.h"
 
 #include <signal.h>
 #include <stdio.h>
@@ -15,7 +16,9 @@ static void signal_handler(int sig) {
     g_crash_report_written = 1;
     g_autofree gchar* msg =
         g_strdup_printf("Signal %d received", sig);
-    hd_sentry_crash_store_write_report("linux", "signal", msg, "");
+    g_autofree gchar* stack =
+        hd_sentry_linux_stack_trace_capture_skip(2);
+    hd_sentry_crash_store_write_report("linux", "signal", msg, stack);
   }
   raise(sig);
 }
