@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 
+#include <windows.h>
 #include <dbghelp.h>
 
 #include <cstdint>
@@ -9,6 +10,7 @@
 #include <iomanip>
 #include <mutex>
 #include <sstream>
+#include <string>
 
 #pragma comment(lib, "dbghelp.lib")
 
@@ -42,17 +44,37 @@ void BasenameOnly(char* path) {
 void AppendSourceLineIfPresent(HANDLE process,
                                void* addr,
                                std::ostringstream& out) {
+  // UNICODE builds map SymGetLineFromAddr64 → SymGetLineFromAddrW64 but expect
+  // IMAGEHLP_LINEW64; use the W API explicitly. Displacement is optional (NULL).
+#ifdef UNICODE
+  IMAGEHLP_LINEW64 line = {};
+  line.SizeOfStruct = sizeof(IMAGEHLP_LINEW64);
+  if (!SymGetLineFromAddrW64(process, PointerToDword64(addr), nullptr, &line)) {
+    return;
+  }
+  if (line.FileName == nullptr || line.FileName[0] == L'\0') {
+    return;
+  }
+  const int needed = WideCharToMultiByte(CP_UTF8, 0, line.FileName, -1,
+                                         nullptr, 0, nullptr, nullptr);
+  if (needed <= 1) {
+    return;
+  }
+  std::string utf8(static_cast<size_t>(needed - 1), '\0');
+  WideCharToMultiByte(CP_UTF8, 0, line.FileName, -1, utf8.data(), needed,
+                      nullptr, nullptr);
+  out << " (" << utf8 << ":" << line.LineNumber << ")";
+#else
   IMAGEHLP_LINE64 line = {};
   line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-  DWORD64 line_displacement = 0;
-  if (!SymGetLineFromAddr64(process, PointerToDword64(addr), &line_displacement,
-                             &line)) {
+  if (!SymGetLineFromAddr64(process, PointerToDword64(addr), nullptr, &line)) {
     return;
   }
   if (line.FileName == nullptr || line.FileName[0] == '\0') {
     return;
   }
   out << " (" << line.FileName << ":" << line.LineNumber << ")";
+#endif
 }
 
 }  // namespace

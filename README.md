@@ -80,7 +80,7 @@ message: ...
 ## Loại báo cáo (`type`)
 
 | type | Nguồn |
-|------|--------|
+| ------ | -------- |
 | `flutter_error` | `captureException` / Flutter error hooks |
 | `uncaught_exception` | Native uncaught (Android Java, iOS NSException, …) |
 | `signal` | Native signal (iOS/macOS/Linux) |
