@@ -53,7 +53,7 @@ void ValidateFileName(const std::string& file_name) {
 
 }  // namespace
 
-void HdSentryCrashStore::Configure() {
+void HdSentryCrashStore::ConfigureHdSentry() {
   if (!CrashDirectory().empty()) {
     return;
   }
@@ -82,12 +82,12 @@ void HdSentryCrashStore::Configure() {
 }
 
 std::string HdSentryCrashStore::Directory() {
-  Configure();
+  ConfigureHdSentry();
   return CrashDirectory().string();
 }
 
 std::vector<std::string> HdSentryCrashStore::ListFileNames() {
-  Configure();
+  ConfigureHdSentry();
   std::vector<std::string> names;
   std::error_code error;
   for (const auto& entry : fs::directory_iterator(CrashDirectory(), error)) {
@@ -108,23 +108,23 @@ std::vector<std::string> HdSentryCrashStore::ListFileNames() {
 
 std::string HdSentryCrashStore::ReadFile(const std::string& file_name) {
   ValidateFileName(file_name);
-  Configure();
+  ConfigureHdSentry();
   std::ifstream input(CrashDirectory() / file_name);
   std::ostringstream buffer;
   buffer << input.rdbuf();
   return buffer.str();
 }
 
-bool HdSentryCrashStore::DeleteFile(const std::string& file_name) {
+bool HdSentryCrashStore::DeleteFileHdSentry(const std::string& file_name) {
   ValidateFileName(file_name);
-  Configure();
+  ConfigureHdSentry();
   std::error_code error;
   return fs::remove(CrashDirectory() / file_name, error);
 }
 
 void HdSentryCrashStore::ClearAll() {
   for (const auto& name : ListFileNames()) {
-    DeleteFile(name);
+    DeleteFileHdSentry(name);
   }
 }
 
@@ -132,7 +132,7 @@ std::string HdSentryCrashStore::WriteReport(const std::string& platform,
                                             const std::string& type,
                                             const std::string& message,
                                             const std::string& stack_trace) {
-  Configure();
+  ConfigureHdSentry();
   const auto millis =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now().time_since_epoch())

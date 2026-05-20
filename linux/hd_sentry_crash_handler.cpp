@@ -45,7 +45,7 @@ void HdSentryCrashHandler::Install() {
     return;
   }
   installed = true;
-  HdSentryCrashStore::Configure();
+  HdSentryCrashStore::ConfigureHdSentry();
 
   const int signals[] = {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGTRAP};
   for (const int signal : signals) {

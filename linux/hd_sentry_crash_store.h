@@ -8,11 +8,11 @@ namespace hd_sentry {
 
 class HdSentryCrashStore {
  public:
-  static void Configure();
+  static void ConfigureHdSentry();
   static std::string Directory();
   static std::vector<std::string> ListFileNames();
   static std::string ReadFile(const std::string& file_name);
-  static bool DeleteFile(const std::string& file_name);
+  static bool DeleteFileHdSentry(const std::string& file_name);
   static void ClearAll();
   static std::string WriteReport(const std::string& platform,
                                  const std::string& type,

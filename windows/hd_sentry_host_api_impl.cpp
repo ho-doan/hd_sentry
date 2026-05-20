@@ -29,7 +29,7 @@ ErrorOr<std::string> HdSentryHostApiImpl::ReadCrashFile(
 
 ErrorOr<bool> HdSentryHostApiImpl::DeleteCrashFile(
     const std::string& file_name) {
-  return HdSentryCrashStore::DeleteFile(file_name);
+  return HdSentryCrashStore::DeleteFileHdSentry(file_name);
 }
 
 std::optional<FlutterError> HdSentryHostApiImpl::ClearAllCrashFiles() {

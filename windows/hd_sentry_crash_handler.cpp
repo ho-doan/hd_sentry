@@ -59,7 +59,7 @@ void HdSentryCrashHandler::Install() {
     return;
   }
   installed = true;
-  HdSentryCrashStore::Configure();
+  HdSentryCrashStore::ConfigureHdSentry();
 #ifdef _WIN32
   SetUnhandledExceptionFilter(UnhandledExceptionFilter);
   std::set_terminate(TerminateHandler);
