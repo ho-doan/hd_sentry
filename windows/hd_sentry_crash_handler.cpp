@@ -2,6 +2,10 @@
 
 #include "hd_sentry_crash_store.h"
 
+#ifdef _WIN32
+#include "hd_sentry_win_stack_trace.h"
+#endif
+
 #include <exception>
 #include <sstream>
 
@@ -9,8 +13,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <dbghelp.h>
-#pragma comment(lib, "dbghelp.lib")
 #endif
 
 namespace hd_sentry {
@@ -24,9 +26,7 @@ LONG WINAPI UnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
 
   void* frames[64];
   const USHORT captured = CaptureStackBackTrace(0, 64, frames, nullptr);
-  for (USHORT index = 0; index < captured; ++index) {
-    stack << '#' << index << " " << frames[index] << '\n';
-  }
+  stack << WinStackTraceFormatFrames(frames, captured);
 
   HdSentryCrashStore::WriteReport("windows", "unhandled_exception",
                                   "Unhandled native exception",
@@ -61,6 +61,7 @@ void HdSentryCrashHandler::Install() {
   installed = true;
   HdSentryCrashStore::ConfigureHdSentry();
 #ifdef _WIN32
+  WinStackTraceEnsureInitialized();
   SetUnhandledExceptionFilter(UnhandledExceptionFilter);
   std::set_terminate(TerminateHandler);
 #endif

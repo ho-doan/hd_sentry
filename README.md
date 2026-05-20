@@ -60,7 +60,7 @@ await HdSentry.clearAllCrashFiles();
 | ---------- | ------------------ | --------- |
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
 | iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
-| Windows | `SetUnhandledExceptionFilter` | `%LOCALAPPDATA%/hd_sentry_crashes/` |
+| Windows | `SetUnhandledExceptionFilter` + dbghelp symbolication | `%LOCALAPPDATA%/hd_sentry_crashes/` |
 | Linux | Signal handlers | `~/.local/share/hd_sentry_crashes/` |
 | Web | `error`, `unhandledrejection` | `localStorage` |
 
@@ -91,7 +91,7 @@ message: ...
 - `initialize()` đã bắt lỗi Flutter; không cần gán `FlutterError.onError` thủ công trừ khi bạn muốn logic riêng (handler cũ vẫn được gọi sau khi ghi file).
 - Crash **native** vẫn do handler native bắt; `captureException` dùng cho lỗi Dart/Flutter.
 - Sau khi ghi file, crash vẫn được chuyển tiếp cho handler mặc định của hệ điều hành.
-- Trên iOS/macOS, signal handler chỉ ghi báo cáo tối thiểu rồi re-raise signal.
+- Trên **Windows**, stack trace dùng `SymFromAddr` (tên hàm khi có PDB) hoặc `tên_module.dll+0xoffset` nếu không có symbol; để đủ tên hàm C++ hãy build **Debug** hoặc ship `.pdb` cùng bản phát hành.
 
 ## Regenerate Pigeon
 

@@ -3,114 +3,214 @@
 
 #ifndef PIGEON_MESSAGES_G_H_
 #define PIGEON_MESSAGES_G_H_
-#include <flutter/basic_message_channel.h>
-#include <flutter/binary_messenger.h>
-#include <flutter/encodable_value.h>
-#include <flutter/standard_message_codec.h>
 
-#include <map>
-#include <optional>
-#include <string>
+#include <flutter_linux/flutter_linux.h>
 
-namespace hd_sentry {
+G_BEGIN_DECLS
 
+G_DECLARE_FINAL_TYPE(hd_sentryMessageCodec, hd_sentry_message_codec, HD_SENTRY, MESSAGE_CODEC, FlStandardMessageCodec)
 
-// Generated class from Pigeon.
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApi, hd_sentry_hd_sentry_host_api, HD_SENTRY, HD_SENTRY_HOST_API, GObject)
 
-class FlutterError {
- public:
-  explicit FlutterError(const std::string& code)
-    : code_(code) {}
-  explicit FlutterError(const std::string& code, const std::string& message)
-    : code_(code), message_(message) {}
-  explicit FlutterError(const std::string& code, const std::string& message, const flutter::EncodableValue& details)
-    : code_(code), message_(message), details_(details) {}
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiInitializeResponse, hd_sentry_hd_sentry_host_api_initialize_response, HD_SENTRY, HD_SENTRY_HOST_API_INITIALIZE_RESPONSE, GObject)
 
-  const std::string& code() const { return code_; }
-  const std::string& message() const { return message_; }
-  const flutter::EncodableValue& details() const { return details_; }
+/**
+ * hd_sentry_hd_sentry_host_api_initialize_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.initialize.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiInitializeResponse
+ */
+hd_sentryHdSentryHostApiInitializeResponse* hd_sentry_hd_sentry_host_api_initialize_response_new();
 
- private:
-  std::string code_;
-  std::string message_;
-  flutter::EncodableValue details_;
-};
+/**
+ * hd_sentry_hd_sentry_host_api_initialize_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.initialize.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiInitializeResponse
+ */
+hd_sentryHdSentryHostApiInitializeResponse* hd_sentry_hd_sentry_host_api_initialize_response_new_error(const gchar* code, const gchar* message, FlValue* details);
 
-template<class T> class ErrorOr {
- public:
-  ErrorOr(const T& rhs) : v_(rhs) {}
-  ErrorOr(const T&& rhs) : v_(std::move(rhs)) {}
-  ErrorOr(const FlutterError& rhs) : v_(rhs) {}
-  ErrorOr(const FlutterError&& rhs) : v_(std::move(rhs)) {}
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiGetCrashDirectoryResponse, hd_sentry_hd_sentry_host_api_get_crash_directory_response, HD_SENTRY, HD_SENTRY_HOST_API_GET_CRASH_DIRECTORY_RESPONSE, GObject)
 
-  bool has_error() const { return std::holds_alternative<FlutterError>(v_); }
-  const T& value() const { return std::get<T>(v_); };
-  const FlutterError& error() const { return std::get<FlutterError>(v_); };
+/**
+ * hd_sentry_hd_sentry_host_api_get_crash_directory_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.getCrashDirectory.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiGetCrashDirectoryResponse
+ */
+hd_sentryHdSentryHostApiGetCrashDirectoryResponse* hd_sentry_hd_sentry_host_api_get_crash_directory_response_new(const gchar* return_value);
 
- private:
-  friend class HdSentryHostApi;
-  ErrorOr() = default;
-  T TakeValue() && { return std::get<T>(std::move(v_)); }
+/**
+ * hd_sentry_hd_sentry_host_api_get_crash_directory_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.getCrashDirectory.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiGetCrashDirectoryResponse
+ */
+hd_sentryHdSentryHostApiGetCrashDirectoryResponse* hd_sentry_hd_sentry_host_api_get_crash_directory_response_new_error(const gchar* code, const gchar* message, FlValue* details);
 
-  std::variant<T, FlutterError> v_;
-};
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiListCrashFileNamesResponse, hd_sentry_hd_sentry_host_api_list_crash_file_names_response, HD_SENTRY, HD_SENTRY_HOST_API_LIST_CRASH_FILE_NAMES_RESPONSE, GObject)
 
+/**
+ * hd_sentry_hd_sentry_host_api_list_crash_file_names_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.listCrashFileNames.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiListCrashFileNamesResponse
+ */
+hd_sentryHdSentryHostApiListCrashFileNamesResponse* hd_sentry_hd_sentry_host_api_list_crash_file_names_response_new(FlValue* return_value);
 
+/**
+ * hd_sentry_hd_sentry_host_api_list_crash_file_names_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.listCrashFileNames.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiListCrashFileNamesResponse
+ */
+hd_sentryHdSentryHostApiListCrashFileNamesResponse* hd_sentry_hd_sentry_host_api_list_crash_file_names_response_new_error(const gchar* code, const gchar* message, FlValue* details);
 
-class PigeonInternalCodecSerializer : public flutter::StandardCodecSerializer {
- public:
-  PigeonInternalCodecSerializer();
-  inline static PigeonInternalCodecSerializer& GetInstance() {
-    static PigeonInternalCodecSerializer sInstance;
-    return sInstance;
-  }
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiReadCrashFileResponse, hd_sentry_hd_sentry_host_api_read_crash_file_response, HD_SENTRY, HD_SENTRY_HOST_API_READ_CRASH_FILE_RESPONSE, GObject)
 
-  void WriteValue(
-    const flutter::EncodableValue& value,
-    flutter::ByteStreamWriter* stream) const override;
- protected:
-  flutter::EncodableValue ReadValueOfType(
-    uint8_t type,
-    flutter::ByteStreamReader* stream) const override;
-};
+/**
+ * hd_sentry_hd_sentry_host_api_read_crash_file_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.readCrashFile.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiReadCrashFileResponse
+ */
+hd_sentryHdSentryHostApiReadCrashFileResponse* hd_sentry_hd_sentry_host_api_read_crash_file_response_new(const gchar* return_value);
 
-// Generated interface from Pigeon that represents a handler of messages from Flutter.
-class HdSentryHostApi {
- public:
-  HdSentryHostApi(const HdSentryHostApi&) = delete;
-  HdSentryHostApi& operator=(const HdSentryHostApi&) = delete;
-  virtual ~HdSentryHostApi() {}
-  // Installs native crash handlers. Call as early as possible (e.g. before [runApp]).
-  virtual std::optional<FlutterError> Initialize() = 0;
-  // Absolute path to the directory where crash reports are stored.
-  virtual ErrorOr<std::string> GetCrashDirectory() = 0;
-  // File names (not full paths) of pending crash reports.
-  virtual ErrorOr<flutter::EncodableList> ListCrashFileNames() = 0;
-  // Full text content of a crash report file.
-  virtual ErrorOr<std::string> ReadCrashFile(const std::string& file_name) = 0;
-  // Deletes a single crash report. Returns true if the file existed.
-  virtual ErrorOr<bool> DeleteCrashFile(const std::string& file_name) = 0;
-  // Deletes all crash reports in [getCrashDirectory].
-  virtual std::optional<FlutterError> ClearAllCrashFiles() = 0;
-  // Captures an exception.
-  virtual std::optional<FlutterError> CaptureException(
-    const std::string& message,
-    const std::string* stack_trace) = 0;
+/**
+ * hd_sentry_hd_sentry_host_api_read_crash_file_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.readCrashFile.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiReadCrashFileResponse
+ */
+hd_sentryHdSentryHostApiReadCrashFileResponse* hd_sentry_hd_sentry_host_api_read_crash_file_response_new_error(const gchar* code, const gchar* message, FlValue* details);
 
-  // The codec used by HdSentryHostApi.
-  static const flutter::StandardMessageCodec& GetCodec();
-  // Sets up an instance of `HdSentryHostApi` to handle messages through the `binary_messenger`.
-  static void SetUp(
-    flutter::BinaryMessenger* binary_messenger,
-    HdSentryHostApi* api);
-  static void SetUp(
-    flutter::BinaryMessenger* binary_messenger,
-    HdSentryHostApi* api,
-    const std::string& message_channel_suffix);
-  static flutter::EncodableValue WrapError(std::string_view error_message);
-  static flutter::EncodableValue WrapError(const FlutterError& error);
- protected:
-  HdSentryHostApi() = default;
-};
-}  // namespace hd_sentry
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiDeleteCrashFileResponse, hd_sentry_hd_sentry_host_api_delete_crash_file_response, HD_SENTRY, HD_SENTRY_HOST_API_DELETE_CRASH_FILE_RESPONSE, GObject)
+
+/**
+ * hd_sentry_hd_sentry_host_api_delete_crash_file_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.deleteCrashFile.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiDeleteCrashFileResponse
+ */
+hd_sentryHdSentryHostApiDeleteCrashFileResponse* hd_sentry_hd_sentry_host_api_delete_crash_file_response_new(gboolean return_value);
+
+/**
+ * hd_sentry_hd_sentry_host_api_delete_crash_file_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.deleteCrashFile.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiDeleteCrashFileResponse
+ */
+hd_sentryHdSentryHostApiDeleteCrashFileResponse* hd_sentry_hd_sentry_host_api_delete_crash_file_response_new_error(const gchar* code, const gchar* message, FlValue* details);
+
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiClearAllCrashFilesResponse, hd_sentry_hd_sentry_host_api_clear_all_crash_files_response, HD_SENTRY, HD_SENTRY_HOST_API_CLEAR_ALL_CRASH_FILES_RESPONSE, GObject)
+
+/**
+ * hd_sentry_hd_sentry_host_api_clear_all_crash_files_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.clearAllCrashFiles.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiClearAllCrashFilesResponse
+ */
+hd_sentryHdSentryHostApiClearAllCrashFilesResponse* hd_sentry_hd_sentry_host_api_clear_all_crash_files_response_new();
+
+/**
+ * hd_sentry_hd_sentry_host_api_clear_all_crash_files_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.clearAllCrashFiles.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiClearAllCrashFilesResponse
+ */
+hd_sentryHdSentryHostApiClearAllCrashFilesResponse* hd_sentry_hd_sentry_host_api_clear_all_crash_files_response_new_error(const gchar* code, const gchar* message, FlValue* details);
+
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiCaptureExceptionResponse, hd_sentry_hd_sentry_host_api_capture_exception_response, HD_SENTRY, HD_SENTRY_HOST_API_CAPTURE_EXCEPTION_RESPONSE, GObject)
+
+/**
+ * hd_sentry_hd_sentry_host_api_capture_exception_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.captureException.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiCaptureExceptionResponse
+ */
+hd_sentryHdSentryHostApiCaptureExceptionResponse* hd_sentry_hd_sentry_host_api_capture_exception_response_new();
+
+/**
+ * hd_sentry_hd_sentry_host_api_capture_exception_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.captureException.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiCaptureExceptionResponse
+ */
+hd_sentryHdSentryHostApiCaptureExceptionResponse* hd_sentry_hd_sentry_host_api_capture_exception_response_new_error(const gchar* code, const gchar* message, FlValue* details);
+
+/**
+ * hd_sentryHdSentryHostApiVTable:
+ *
+ * Table of functions exposed by HdSentryHostApi to be implemented by the API provider.
+ */
+typedef struct {
+  hd_sentryHdSentryHostApiInitializeResponse* (*initialize)(gpointer user_data);
+  hd_sentryHdSentryHostApiGetCrashDirectoryResponse* (*get_crash_directory)(gpointer user_data);
+  hd_sentryHdSentryHostApiListCrashFileNamesResponse* (*list_crash_file_names)(gpointer user_data);
+  hd_sentryHdSentryHostApiReadCrashFileResponse* (*read_crash_file)(const gchar* file_name, gpointer user_data);
+  hd_sentryHdSentryHostApiDeleteCrashFileResponse* (*delete_crash_file)(const gchar* file_name, gpointer user_data);
+  hd_sentryHdSentryHostApiClearAllCrashFilesResponse* (*clear_all_crash_files)(gpointer user_data);
+  hd_sentryHdSentryHostApiCaptureExceptionResponse* (*capture_exception)(const gchar* message, const gchar* stack_trace, gpointer user_data);
+} hd_sentryHdSentryHostApiVTable;
+
+/**
+ * hd_sentry_hd_sentry_host_api_set_method_handlers:
+ *
+ * @messenger: an #FlBinaryMessenger.
+ * @suffix: (allow-none): a suffix to add to the API or %NULL for none.
+ * @vtable: implementations of the methods in this API.
+ * @user_data: (closure): user data to pass to the functions in @vtable.
+ * @user_data_free_func: (allow-none): a function which gets called to free @user_data, or %NULL.
+ *
+ * Connects the method handlers in the HdSentryHostApi API.
+ */
+void hd_sentry_hd_sentry_host_api_set_method_handlers(FlBinaryMessenger* messenger, const gchar* suffix, const hd_sentryHdSentryHostApiVTable* vtable, gpointer user_data, GDestroyNotify user_data_free_func);
+
+/**
+ * hd_sentry_hd_sentry_host_api_clear_method_handlers:
+ *
+ * @messenger: an #FlBinaryMessenger.
+ * @suffix: (allow-none): a suffix to add to the API or %NULL for none.
+ *
+ * Clears the method handlers in the HdSentryHostApi API.
+ */
+void hd_sentry_hd_sentry_host_api_clear_method_handlers(FlBinaryMessenger* messenger, const gchar* suffix);
+
+G_END_DECLS
+
 #endif  // PIGEON_MESSAGES_G_H_
