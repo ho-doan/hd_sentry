@@ -1,11 +1,11 @@
 #define _GNU_SOURCE
 
 #include "hd_sentry_linux_crash_dump.h"
+#include "hd_sentry_linux_elfcore_types.h"
 
 #include <elf.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/elfcore.h>
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
@@ -122,12 +122,8 @@ static gboolean writer_note(HdSentryCoreWriter* w, const char* name, int type,
 
 #if defined(__x86_64__)
 
-static gboolean fill_prstatus(const ucontext_t* uc, struct elf_prstatus* pr) {
+static gboolean fill_prstatus(const ucontext_t* uc, HdSentryElfPrstatus* pr) {
   memset(pr, 0, sizeof(*pr));
-  pr->pr_info.si_signo = 0;
-  pr->pr_cursig = 0;
-  pr->pr_sigpend = 0;
-  pr->pr_sighold = 0;
   pr->pr_pid = getpid();
   pr->pr_ppid = getppid();
   pr->pr_pgrp = getpgrp();
@@ -153,13 +149,13 @@ static gboolean stack_region_from_uc(const ucontext_t* uc, uintptr_t* start,
 
 #elif defined(__aarch64__)
 
-static gboolean fill_prstatus(const ucontext_t* uc, struct elf_prstatus* pr) {
+static gboolean fill_prstatus(const ucontext_t* uc, HdSentryElfPrstatus* pr) {
   memset(pr, 0, sizeof(*pr));
   pr->pr_pid = getpid();
   pr->pr_ppid = getppid();
   pr->pr_pgrp = getpgrp();
   pr->pr_sid = getsid(0);
-  memcpy(&pr->pr_reg, &uc->uc_mcontext.regs, sizeof(pr->pr_reg));
+  memcpy(&pr->pr_reg, &uc->uc_mcontext, sizeof(pr->pr_reg));
   return TRUE;
 }
 
@@ -187,17 +183,17 @@ static gboolean write_elf_core(const char* path, gint signo,
   const gboolean has_stack =
       uc != NULL && stack_region_from_uc(uc, &stack_start, &stack_length);
 
-  struct elf_prstatus prstatus;
+  HdSentryElfPrstatus prstatus;
   if (uc == NULL || !fill_prstatus(uc, &prstatus)) {
-  memset(&prstatus, 0, sizeof(prstatus));
-  prstatus.pr_pid = getpid();
+    memset(&prstatus, 0, sizeof(prstatus));
+    prstatus.pr_pid = getpid();
   }
   if (signo > 0) {
     prstatus.pr_cursig = (short)signo;
     prstatus.pr_info.si_signo = signo;
   }
 
-  elf_siginfo_t elf_siginfo;
+  HdSentryElfSiginfo elf_siginfo;
   memset(&elf_siginfo, 0, sizeof(elf_siginfo));
   if (info != NULL) {
     elf_siginfo.si_signo = info->si_signo;
@@ -216,8 +212,9 @@ static gboolean write_elf_core(const char* path, gint signo,
   writer_init(&writer);
   writer.offset = notes_offset;
 
-  if (!writer_note(&writer, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus)) ||
-      !writer_note(&writer, "CORE", NT_SIGINFO, &elf_siginfo,
+  if (!writer_note(&writer, "CORE", HD_SENTRY_NT_PRSTATUS, &prstatus,
+                   sizeof(prstatus)) ||
+      !writer_note(&writer, "CORE", HD_SENTRY_NT_SIGINFO, &elf_siginfo,
                    sizeof(elf_siginfo))) {
     return FALSE;
   }
