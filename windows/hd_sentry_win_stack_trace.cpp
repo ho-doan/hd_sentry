@@ -4,6 +4,7 @@
 
 #include <dbghelp.h>
 
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <mutex>
@@ -15,6 +16,10 @@ namespace hd_sentry {
 namespace {
 
 std::once_flag g_sym_once;
+
+inline DWORD64 PointerToDword64(const void* p) {
+  return static_cast<DWORD64>(reinterpret_cast<uintptr_t>(p));
+}
 
 void BasenameOnly(char* path) {
   if (path == nullptr || path[0] == '\0') {
@@ -40,8 +45,8 @@ void AppendSourceLineIfPresent(HANDLE process,
   IMAGEHLP_LINE64 line = {};
   line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
   DWORD64 line_displacement = 0;
-  if (!SymGetLineFromAddr64(process, reinterpret_cast<DWORD64>(addr),
-                             &line_displacement, &line)) {
+  if (!SymGetLineFromAddr64(process, PointerToDword64(addr), &line_displacement,
+                             &line)) {
     return;
   }
   if (line.FileName == nullptr || line.FileName[0] == '\0') {
@@ -79,7 +84,7 @@ std::string WinStackTraceFormatFrames(void* const* frames, USHORT frame_count) {
     symbol->MaxNameLen = MAX_SYM_NAME;
 
     DWORD64 displacement = 0;
-    if (SymFromAddr(process, reinterpret_cast<DWORD64>(addr), &displacement,
+    if (SymFromAddr(process, PointerToDword64(addr), &displacement,
                     symbol)) {
       out << symbol->Name;
       if (displacement != 0) {
