@@ -1,13 +1,13 @@
 #ifndef HD_SENTRY_CRASH_HANDLER_H_
 #define HD_SENTRY_CRASH_HANDLER_H_
 
-namespace hd_sentry {
+G_BEGIN_DECLS
 
-class HdSentryCrashHandler {
- public:
-  static void Install();
-};
+void hd_sentry_crash_handler_install(void);
 
-}  // namespace hd_sentry
+/** Signal handlers only (called from C++ install wrapper). */
+void hd_sentry_crash_handler_install_signals(void);
+
+G_END_DECLS
 
 #endif  // HD_SENTRY_CRASH_HANDLER_H_

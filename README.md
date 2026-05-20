@@ -61,7 +61,7 @@ await HdSentry.clearAllCrashFiles();
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
 | iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
 | Windows | `SetUnhandledExceptionFilter` + dbghelp + **minidump `.dmp`** | `%LOCALAPPDATA%/hd_sentry_crashes/` |
-| Linux | Signal handlers | `~/.local/share/hd_sentry_crashes/` |
+| Linux | Signal handlers (C) + Pigeon GObject | `~/.local/share/hd_sentry_crashes/` |
 | Web | `error`, `unhandledrejection` | `localStorage` |
 
 ## Định dạng file

@@ -5,19 +5,20 @@ cmake_minimum_required(VERSION 3.10)
 
 # Project-level configuration.
 set(PROJECT_NAME "hd_sentry")
-project(${PROJECT_NAME} LANGUAGES CXX)
+project(${PROJECT_NAME} LANGUAGES CXX C)
 
 # This value is used when generating builds using this plugin, so it must
 # not be changed.
 set(PLUGIN_NAME "hd_sentry_plugin")
 
-# Any new source files that you add to the plugin should be added here.
+# Linux: Pigeon GObject (.c/.h) + crash logic (.c) + plugin entry (.cc).
 list(APPEND PLUGIN_SOURCES
-  "hd_sentry_plugin.cpp"
-  "hd_sentry_crash_store.cpp"
-  "hd_sentry_crash_handler.cpp"
-  "hd_sentry_host_api_impl.cpp"
-  "messages.g.cpp"
+  "hd_sentry_plugin.cc"
+  "hd_sentry_crash_handler.cc"
+  "hd_sentry_host_api_impl.c"
+  "hd_sentry_crash_store.c"
+  "hd_sentry_crash_handler.c"
+  "messages.g.c"
 )
 
 # Define the plugin library target. Its name must not be changed (see comment
@@ -40,9 +41,10 @@ target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
 
 # Source include directories and library dependencies. Add any plugin-specific
 # dependencies here.
+target_include_directories(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
+target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
 # List of absolute paths to libraries that should be bundled with the plugin.
@@ -95,4 +97,4 @@ include(GoogleTest)
 gtest_discover_tests(${TEST_RUNNER})
 
 endif()  # CMake version check
-endif()  # include_${PROJECT_NAME}_tests
+endif()  # include_${PROJECT_NAME}_tests}
