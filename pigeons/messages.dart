@@ -7,7 +7,8 @@ import 'package:pigeon/pigeon.dart';
     dartOptions: DartOptions(),
     kotlinOut: 'android/src/main/kotlin/com/hodoan/hd_sentry/Messages.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.hodoan.hd_sentry'),
-    swiftOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.swift',
+    // sharedDarwinSource: ios + macos compile from darwin/
+    swiftOut: 'darwin/hd_sentry/Sources/hd_sentry/Messages.g.swift',
     swiftOptions: SwiftOptions(),
     // objcHeaderOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.h',
     // objcSourceOut: 'ios/hd_sentry/Sources/hd_sentry/Messages.g.m',

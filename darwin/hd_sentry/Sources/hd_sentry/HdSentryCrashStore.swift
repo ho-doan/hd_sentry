@@ -8,7 +8,8 @@ enum HdSentryCrashStore {
   private static var crashDirectory: URL?
 
   static func configure() {
-    let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    let base =
+      FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
       ?? FileManager.default.temporaryDirectory
     let directory = base.appendingPathComponent(crashDirectoryName, isDirectory: true)
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -20,7 +21,9 @@ enum HdSentryCrashStore {
       configure()
     }
     guard let crashDirectory else {
-      throw NSError(domain: "HdSentry", code: 1, userInfo: [NSLocalizedDescriptionKey: "Crash directory unavailable"])
+      throw NSError(
+        domain: "HdSentry", code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "Crash directory unavailable"])
     }
     return crashDirectory
   }
@@ -29,7 +32,7 @@ enum HdSentryCrashStore {
     let directory = try directory()
     let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
     return files
-      .filter { $0.hasSuffix(fileSuffix) }
+      .filter { $0.hasPrefix(filePrefix) && $0.hasSuffix(fileSuffix) }
       .sorted(by: >)
   }
 
@@ -65,11 +68,13 @@ enum HdSentryCrashStore {
     stackTrace: String,
     threadName: String? = nil
   ) throws -> String {
+    let millis = Int(Date().timeIntervalSince1970 * 1000)
+    let fileName = "\(filePrefix)\(millis)\(fileSuffix)"
+
     let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    formatter.formatOptions = [.withInternetDateTime]
     let timestamp = formatter.string(from: Date())
-    let fileName =
-      "\(filePrefix)\(Int(Date().timeIntervalSince1970 * 1000))_\(UUID().uuidString.prefix(8))\(fileSuffix)"
+
     var body = """
     === HD Sentry Native Crash Report ===
     platform: \(platform)
@@ -86,14 +91,22 @@ enum HdSentryCrashStore {
     --- stack trace ---
     \(stackTrace)
     """
+
     let fileURL = try directory().appendingPathComponent(fileName)
     try body.write(to: fileURL, atomically: true, encoding: .utf8)
     return fileName
   }
 
   private static func validate(fileName: String) throws {
-    if fileName.contains("/") || fileName.contains("..") {
-      throw NSError(domain: "HdSentry", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid crash file name"])
+    if fileName.isEmpty || fileName.contains("/") || fileName.contains("..") {
+      throw NSError(
+        domain: "HdSentry", code: 2,
+        userInfo: [NSLocalizedDescriptionKey: "Invalid crash file name"])
+    }
+    if !fileName.hasPrefix(filePrefix) || !fileName.hasSuffix(fileSuffix) {
+      throw NSError(
+        domain: "HdSentry", code: 2,
+        userInfo: [NSLocalizedDescriptionKey: "Invalid crash file name"])
     }
   }
 }

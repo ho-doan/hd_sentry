@@ -23,6 +23,7 @@ public class CrashNativeDemoPlugin: NSObject, FlutterPlugin {
   }
 
   private static func triggerFatalCrash() {
-    abort()
+    // SIGABRT with a clear symbol in crash reports (hd_sentry strips its own handler frames).
+    fatalError("crash_native_demo: intentional native crash (macOS)")
   }
 }

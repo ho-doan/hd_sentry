@@ -1,10 +1,21 @@
+#if os(iOS)
+import Flutter
+import UIKit
+#elseif os(macOS)
 import Cocoa
 import FlutterMacOS
+#else
+#error("hd_sentry supports iOS and macOS only.")
+#endif
 
 public class HdSentryPlugin: NSObject, FlutterPlugin, HdSentryHostApi {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = HdSentryPlugin()
+    #if os(iOS)
+    HdSentryHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
+    #elseif os(macOS)
     HdSentryHostApiSetup.setUp(binaryMessenger: registrar.messenger, api: instance)
+    #endif
   }
 
   public func initialize() throws {
@@ -33,7 +44,7 @@ public class HdSentryPlugin: NSObject, FlutterPlugin, HdSentryHostApi {
 
   public func captureException(message: String, stackTrace: String?) throws {
     try HdSentryCrashStore.writeReport(
-      platform: "macos",
+      platform: HdSentryPlatform.current,
       type: "flutter_error",
       message: message,
       stackTrace: stackTrace ?? ""

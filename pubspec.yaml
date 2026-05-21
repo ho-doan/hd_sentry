@@ -42,10 +42,12 @@ flutter:
         pluginClass: HdSentryPlugin
       ios:
         pluginClass: HdSentryPlugin
+        sharedDarwinSource: true
       linux:
         pluginClass: HdSentryPlugin
       macos:
         pluginClass: HdSentryPlugin
+        sharedDarwinSource: true
       windows:
         pluginClass: HdSentryPluginCApi
 

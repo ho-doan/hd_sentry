@@ -23,7 +23,6 @@ public class CrashNativeDemoPlugin: NSObject, FlutterPlugin {
   }
 
   private static func triggerFatalCrash() {
-    // SIGABRT — caught by hd_sentry signal handler when installed.
-    abort()
+    fatalError("crash_native_demo: intentional native crash (iOS)")
   }
 }

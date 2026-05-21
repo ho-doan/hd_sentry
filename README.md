@@ -59,7 +59,7 @@ await HdSentry.clearAllCrashFiles();
 | Nền tảng | Cơ chế bắt crash | Lưu trữ |
 | ---------- | ------------------ | --------- |
 | Android | `UncaughtExceptionHandler` | `filesDir/hd_sentry_crashes/` |
-| iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers | Application Support |
+| iOS / macOS | `NSUncaughtExceptionHandler` + signal handlers (shared **`darwin/`**); báo cáo có **likely origin** + gợi ý `atos` / `swift demangle` | Application Support |
 | Windows | `SetUnhandledExceptionFilter` + dbghelp + **minidump `.dmp`** | `%LOCALAPPDATA%/hd_sentry_crashes/` |
 | Linux | Signal handlers + **ELF core `.dmp`** + `.maps` | `~/.local/share/hd_sentry_crashes/` |
 | Web | `error`, `unhandledrejection` | `localStorage` |
@@ -133,3 +133,5 @@ gdb ./hd_sentry_example ~/.local/share/hd_sentry_crashes/crash_<millis>.dmp
 ```bash
 dart run pigeon --input pigeons/messages.dart
 ```
+
+Swift/ObjC host code cho **iOS + macOS** nằm tại `darwin/hd_sentry/Sources/hd_sentry/` (`sharedDarwinSource: true` trong `pubspec.yaml`). Không chỉnh trực tiếp `ios/` hay `macos/` — hai thư mục đó chỉ còn podspec trỏ về `darwin/`.
