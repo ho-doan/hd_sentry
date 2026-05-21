@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
   name: "hd_sentry",
   platforms: [
-    .iOS("13.0"),
+    .iOS("12.0"),
     .macOS("10.14"),
   ],
   products: [
