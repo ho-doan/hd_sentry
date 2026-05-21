@@ -50,4 +50,18 @@ public class HdSentryPlugin: NSObject, FlutterPlugin, HdSentryHostApi {
       stackTrace: stackTrace ?? ""
     )
   }
+
+  public func addBreadcrumb(message: String, category: String?, data: String?) throws {
+    let directory = try HdSentryCrashStore.directory()
+    try HdSentryBreadcrumbStore.add(
+      crashDirectory: directory,
+      message: message,
+      category: category,
+      data: data
+    )
+  }
+
+  public func clearBreadcrumbs() throws {
+    try HdSentryBreadcrumbStore.clear(crashDirectory: try HdSentryCrashStore.directory())
+  }
 }

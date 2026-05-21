@@ -48,4 +48,10 @@ abstract class HdSentryHostApi {
 
   /// Captures an exception.
   void captureException(String message, [String? stackTrace]);
+
+  /// Appends a breadcrumb to the session log (persisted on disk for native crashes).
+  void addBreadcrumb(String message, String? category, String? data);
+
+  /// Clears persisted session breadcrumbs.
+  void clearBreadcrumbs();
 }

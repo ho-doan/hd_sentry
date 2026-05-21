@@ -16,6 +16,11 @@ class HdSentryHostApiImpl : public HdSentryHostApi {
   std::optional<FlutterError> CaptureException(
       const std::string& message,
       const std::string* stack_trace) override;
+  std::optional<FlutterError> AddBreadcrumb(
+      const std::string& message,
+      const std::string* category,
+      const std::string* data) override;
+  std::optional<FlutterError> ClearBreadcrumbs() override;
 };
 
 }  // namespace hd_sentry

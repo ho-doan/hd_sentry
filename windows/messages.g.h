@@ -96,6 +96,13 @@ class HdSentryHostApi {
   virtual std::optional<FlutterError> CaptureException(
     const std::string& message,
     const std::string* stack_trace) = 0;
+  // Appends a breadcrumb to the session log (persisted on disk for native crashes).
+  virtual std::optional<FlutterError> AddBreadcrumb(
+    const std::string& message,
+    const std::string* category,
+    const std::string* data) = 0;
+  // Clears persisted session breadcrumbs.
+  virtual std::optional<FlutterError> ClearBreadcrumbs() = 0;
 
   // The codec used by HdSentryHostApi.
   static const flutter::StandardMessageCodec& GetCodec();

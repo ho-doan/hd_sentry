@@ -46,6 +46,21 @@ class HdSentryPlugin : FlutterPlugin, HdSentryHostApi {
         )
     }
 
+    override fun addBreadcrumb(message: String, category: String?, data: String?) {
+        ensureStoreConfigured()
+        HdSentryBreadcrumbStore.add(
+            crashDirectory = HdSentryCrashStore.directory(),
+            message = message,
+            category = category,
+            data = data,
+        )
+    }
+
+    override fun clearBreadcrumbs() {
+        ensureStoreConfigured()
+        HdSentryBreadcrumbStore.clear(HdSentryCrashStore.directory())
+    }
+
     private fun ensureStoreConfigured() {
         if (applicationContext != null) {
             HdSentryCrashStore.configure(applicationContext!!)

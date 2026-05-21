@@ -36,6 +36,44 @@ await HdSentry.captureException('something failed', stackTrace);
 await HdSentry.captureError(error, stackTrace);
 ```
 
+## Breadcrumbs (hành vi trước crash)
+
+Ghi các bước người dùng / ngữ cảnh trước khi crash. Log được **persist** (`session_breadcrumbs.log` cạnh crash files) và **merge** vào báo cáo crash kế tiếp (sau đó xóa log).
+
+```dart
+await HdSentry.addBreadcrumb('Opened checkout', category: 'navigation');
+await HdSentry.addBreadcrumb(
+  'Tapped pay',
+  category: 'ui',
+  data: {'amount': '99', 'currency': 'USD'},
+);
+await HdSentry.clearBreadcrumbs(); // tuỳ chọn
+```
+
+Trong file crash:
+
+```txt
+--- stack trace ---
+...
+
+--- breadcrumbs ---
+2026-05-21T10:00:00.000Z  navigation  Opened checkout
+2026-05-21T10:00:01.000Z  ui  Tapped pay  {"amount":"99","currency":"USD"}
+```
+
+### Native (plugin / SDK khác dùng chung store)
+
+Sau khi app đã gọi `HdSentry.initialize()` (crash store đã configure):
+
+| Nền tảng | API |
+| -------- | --- |
+| Android (Kotlin) | `HdSentryBreadcrumbStore.add(HdSentryCrashStore.directory(), message, category, data)` |
+| iOS / macOS (Swift) | `try HdSentryBreadcrumbStore.add(crashDirectory: try HdSentryCrashStore.directory(), message: …)` |
+| Linux (C) | `hd_sentry_breadcrumb_store_add(message, category, data)` |
+| Windows (C++) | `hd_sentry::HdSentryBreadcrumbStore::Add(message, &category, &data)` |
+
+File log: `session_breadcrumbs.log` (tối đa 100 dòng, format `timestamp\tcategory\tmessage\tdata`).
+
 ## Đọc crash từ Dart
 
 ```dart
@@ -75,6 +113,9 @@ message: ...
 
 --- stack trace ---
 ...
+
+--- breadcrumbs ---
+2026-05-21T10:00:00.000Z  navigation  Opened home
 ```
 
 ## Loại báo cáo (`type`)

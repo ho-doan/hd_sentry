@@ -32,4 +32,12 @@ abstract class HdSentryBackend {
   }
 
   Future<void> captureException(String message, String? stackTrace);
+
+  Future<void> addBreadcrumb(
+    String message, {
+    String? category,
+    String? data,
+  });
+
+  Future<void> clearBreadcrumbs();
 }

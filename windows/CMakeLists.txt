@@ -21,6 +21,7 @@ list(APPEND PLUGIN_SOURCES
   "hd_sentry_plugin.cpp"
   "hd_sentry_plugin.h"
   "hd_sentry_crash_store.cpp"
+  "hd_sentry_breadcrumb_store.cpp"
   "hd_sentry_crash_handler.cpp"
   "hd_sentry_win_stack_trace.cpp"
   "hd_sentry_win_minidump.cpp"

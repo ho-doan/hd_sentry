@@ -7,6 +7,8 @@ import 'package:web/web.dart' as web;
 import 'hd_sentry_backend.dart';
 
 const _storageKey = 'hd_sentry_crashes';
+const _breadcrumbsKey = 'hd_sentry_session_breadcrumbs';
+const _maxBreadcrumbs = 100;
 
 HdSentryBackend createBackend() => HdSentryWebBackend();
 
@@ -35,6 +37,7 @@ class HdSentryWebBackend extends HdSentryBackend {
     required String type,
     required String message,
     required String stack,
+    String breadcrumbsSection = '',
   }) {
     final now = DateTime.now().toUtc().toIso8601String();
     return '''
@@ -45,8 +48,39 @@ type: $type
 message: $message
 
 --- stack trace ---
-$stack
-''';
+$stack$breadcrumbsSection''';
+  }
+
+  static String _sanitizeField(String value) =>
+      value.replaceAll('\t', ' ').replaceAll('\n', ' ').replaceAll('\r', ' ');
+
+  static List<String> _loadBreadcrumbLines() {
+    final raw = web.window.localStorage.getItem(_breadcrumbsKey);
+    if (raw == null || raw.isEmpty) {
+      return [];
+    }
+    return raw
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+  }
+
+  static void _saveBreadcrumbLines(List<String> lines) {
+    if (lines.isEmpty) {
+      web.window.localStorage.removeItem(_breadcrumbsKey);
+      return;
+    }
+    web.window.localStorage.setItem(_breadcrumbsKey, '${lines.join('\n')}\n');
+  }
+
+  static String _consumeBreadcrumbsSection() {
+    final lines = _loadBreadcrumbLines();
+    web.window.localStorage.removeItem(_breadcrumbsKey);
+    if (lines.isEmpty) {
+      return '';
+    }
+    return '\n--- breadcrumbs ---\n${lines.join('\n')}\n';
   }
 
   void _persistCrash({
@@ -56,7 +90,12 @@ $stack
   }) {
     final store = _loadStore();
     final fileName = 'crash_${DateTime.now().millisecondsSinceEpoch}.txt';
-    store[fileName] = _formatReport(type: type, message: message, stack: stack);
+    store[fileName] = _formatReport(
+      type: type,
+      message: message,
+      stack: stack,
+      breadcrumbsSection: _consumeBreadcrumbsSection(),
+    );
     _saveStore(store);
   }
 
@@ -132,6 +171,7 @@ $stack
   @override
   Future<void> clearAllCrashFiles() async {
     web.window.localStorage.removeItem(_storageKey);
+    web.window.localStorage.removeItem(_breadcrumbsKey);
   }
 
   @override
@@ -141,6 +181,31 @@ $stack
       message: message,
       stack: stackTrace ?? '',
     );
+  }
+
+  @override
+  Future<void> addBreadcrumb(
+    String message, {
+    String? category,
+    String? data,
+  }) async {
+    final timestamp = DateTime.now().toUtc().toIso8601String();
+    final line = [
+      timestamp,
+      _sanitizeField(category ?? ''),
+      _sanitizeField(message),
+      _sanitizeField(data ?? ''),
+    ].join('\t');
+    final lines = _loadBreadcrumbLines()..add(line);
+    if (lines.length > _maxBreadcrumbs) {
+      lines.removeRange(0, lines.length - _maxBreadcrumbs);
+    }
+    _saveBreadcrumbLines(lines);
+  }
+
+  @override
+  Future<void> clearBreadcrumbs() async {
+    web.window.localStorage.removeItem(_breadcrumbsKey);
   }
 }
 

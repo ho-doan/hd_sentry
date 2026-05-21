@@ -101,6 +101,10 @@ protocol HdSentryHostApi {
   func clearAllCrashFiles() throws
   /// Captures an exception.
   func captureException(message: String, stackTrace: String?) throws
+  /// Appends a breadcrumb to the session log (persisted on disk for native crashes).
+  func addBreadcrumb(message: String, category: String?, data: String?) throws
+  /// Clears persisted session breadcrumbs.
+  func clearBreadcrumbs() throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -213,6 +217,38 @@ class HdSentryHostApiSetup {
       }
     } else {
       captureExceptionChannel.setMessageHandler(nil)
+    }
+    /// Appends a breadcrumb to the session log (persisted on disk for native crashes).
+    let addBreadcrumbChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.addBreadcrumb\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      addBreadcrumbChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let messageArg = args[0] as! String
+        let categoryArg: String? = nilOrValue(args[1])
+        let dataArg: String? = nilOrValue(args[2])
+        do {
+          try api.addBreadcrumb(message: messageArg, category: categoryArg, data: dataArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      addBreadcrumbChannel.setMessageHandler(nil)
+    }
+    /// Clears persisted session breadcrumbs.
+    let clearBreadcrumbsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.clearBreadcrumbs\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearBreadcrumbsChannel.setMessageHandler { _, reply in
+        do {
+          try api.clearBreadcrumbs()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      clearBreadcrumbsChannel.setMessageHandler(nil)
     }
   }
 }

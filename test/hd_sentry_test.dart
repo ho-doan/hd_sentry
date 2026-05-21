@@ -35,6 +35,21 @@ message: boom
   Future<String> readCrashFile(String fileName) async => files[fileName]!;
 
   final List<(String, String?)> captured = [];
+  final List<(String, String?, String?)> breadcrumbs = [];
+
+  @override
+  Future<void> addBreadcrumb(
+    String message, {
+    String? category,
+    String? data,
+  }) async {
+    breadcrumbs.add((message, category, data));
+  }
+
+  @override
+  Future<void> clearBreadcrumbs() async {
+    breadcrumbs.clear();
+  }
 
   @override
   Future<void> captureException(String message, String? stackTrace) async {
@@ -69,6 +84,14 @@ void main() {
     expect(backend.captured, hasLength(1));
     final reports = await backend.listCrashReports();
     expect(reports.any((r) => r.type == 'flutter_error'), isTrue);
+  });
+
+  test('addBreadcrumb forwards to backend', () async {
+    final backend = FakeHdSentryBackend();
+    await backend.addBreadcrumb('opened checkout', category: 'nav');
+    expect(backend.breadcrumbs, hasLength(1));
+    expect(backend.breadcrumbs.first.$1, 'opened checkout');
+    expect(backend.breadcrumbs.first.$2, 'nav');
   });
 
   test('HdSentry delegates to backend', () async {

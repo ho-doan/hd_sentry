@@ -1,5 +1,6 @@
 #include "hd_sentry_host_api_impl.h"
 
+#include "hd_sentry_breadcrumb_store.h"
 #include "hd_sentry_crash_handler.h"
 #include "hd_sentry_crash_store.h"
 #include "messages.g.h"
@@ -87,6 +88,23 @@ static hd_sentryHdSentryHostApiCaptureExceptionResponse* host_api_capture_except
   return hd_sentry_hd_sentry_host_api_capture_exception_response_new();
 }
 
+static hd_sentryHdSentryHostApiAddBreadcrumbResponse* host_api_add_breadcrumb(
+    const gchar* message,
+    const gchar* category,
+    const gchar* data,
+    gpointer user_data) {
+  (void)user_data;
+  hd_sentry_breadcrumb_store_add(message, category, data);
+  return hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new();
+}
+
+static hd_sentryHdSentryHostApiClearBreadcrumbsResponse* host_api_clear_breadcrumbs(
+    gpointer user_data) {
+  (void)user_data;
+  hd_sentry_breadcrumb_store_clear();
+  return hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new();
+}
+
 static const hd_sentryHdSentryHostApiVTable kHostApiVTable = {
     .initialize = host_api_initialize,
     .get_crash_directory = host_api_get_crash_directory,
@@ -95,6 +113,8 @@ static const hd_sentryHdSentryHostApiVTable kHostApiVTable = {
     .delete_crash_file = host_api_delete_crash_file,
     .clear_all_crash_files = host_api_clear_all_crash_files,
     .capture_exception = host_api_capture_exception,
+    .add_breadcrumb = host_api_add_breadcrumb,
+    .clear_breadcrumbs = host_api_clear_breadcrumbs,
 };
 
 void hd_sentry_host_api_impl_register(FlBinaryMessenger* messenger) {

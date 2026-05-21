@@ -230,6 +230,59 @@ void HdSentryHostApi::SetUp(
       channel.SetMessageHandler(nullptr);
     }
   }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.addBreadcrumb" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          const auto& args = std::get<EncodableList>(message);
+          const auto& encodable_message_arg = args.at(0);
+          if (encodable_message_arg.IsNull()) {
+            reply(WrapError("message_arg unexpectedly null."));
+            return;
+          }
+          const auto& message_arg = std::get<std::string>(encodable_message_arg);
+          const auto& encodable_category_arg = args.at(1);
+          const auto* category_arg = std::get_if<std::string>(&encodable_category_arg);
+          const auto& encodable_data_arg = args.at(2);
+          const auto* data_arg = std::get_if<std::string>(&encodable_data_arg);
+          std::optional<FlutterError> output = api->AddBreadcrumb(message_arg, category_arg, data_arg);
+          if (output.has_value()) {
+            reply(WrapError(output.value()));
+            return;
+          }
+          EncodableList wrapped;
+          wrapped.push_back(EncodableValue());
+          reply(EncodableValue(std::move(wrapped)));
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.clearBreadcrumbs" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          std::optional<FlutterError> output = api->ClearBreadcrumbs();
+          if (output.has_value()) {
+            reply(WrapError(output.value()));
+            return;
+          }
+          EncodableList wrapped;
+          wrapped.push_back(EncodableValue());
+          reply(EncodableValue(std::move(wrapped)));
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
 }
 
 EncodableValue HdSentryHostApi::WrapError(std::string_view error_message) {

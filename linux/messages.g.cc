@@ -299,6 +299,80 @@ hd_sentryHdSentryHostApiCaptureExceptionResponse* hd_sentry_hd_sentry_host_api_c
   return self;
 }
 
+struct _hd_sentryHdSentryHostApiAddBreadcrumbResponse {
+  GObject parent_instance;
+
+  FlValue* value;
+};
+
+G_DEFINE_TYPE(hd_sentryHdSentryHostApiAddBreadcrumbResponse, hd_sentry_hd_sentry_host_api_add_breadcrumb_response, G_TYPE_OBJECT)
+
+static void hd_sentry_hd_sentry_host_api_add_breadcrumb_response_dispose(GObject* object) {
+  hd_sentryHdSentryHostApiAddBreadcrumbResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_ADD_BREADCRUMB_RESPONSE(object);
+  g_clear_pointer(&self->value, fl_value_unref);
+  G_OBJECT_CLASS(hd_sentry_hd_sentry_host_api_add_breadcrumb_response_parent_class)->dispose(object);
+}
+
+static void hd_sentry_hd_sentry_host_api_add_breadcrumb_response_init(hd_sentryHdSentryHostApiAddBreadcrumbResponse* self) {
+}
+
+static void hd_sentry_hd_sentry_host_api_add_breadcrumb_response_class_init(hd_sentryHdSentryHostApiAddBreadcrumbResponseClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = hd_sentry_hd_sentry_host_api_add_breadcrumb_response_dispose;
+}
+
+hd_sentryHdSentryHostApiAddBreadcrumbResponse* hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new() {
+  hd_sentryHdSentryHostApiAddBreadcrumbResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_ADD_BREADCRUMB_RESPONSE(g_object_new(hd_sentry_hd_sentry_host_api_add_breadcrumb_response_get_type(), nullptr));
+  self->value = fl_value_new_list();
+  fl_value_append_take(self->value, fl_value_new_null());
+  return self;
+}
+
+hd_sentryHdSentryHostApiAddBreadcrumbResponse* hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new_error(const gchar* code, const gchar* message, FlValue* details) {
+  hd_sentryHdSentryHostApiAddBreadcrumbResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_ADD_BREADCRUMB_RESPONSE(g_object_new(hd_sentry_hd_sentry_host_api_add_breadcrumb_response_get_type(), nullptr));
+  self->value = fl_value_new_list();
+  fl_value_append_take(self->value, fl_value_new_string(code));
+  fl_value_append_take(self->value, fl_value_new_string(message != nullptr ? message : ""));
+  fl_value_append_take(self->value, details != nullptr ? fl_value_ref(details) : fl_value_new_null());
+  return self;
+}
+
+struct _hd_sentryHdSentryHostApiClearBreadcrumbsResponse {
+  GObject parent_instance;
+
+  FlValue* value;
+};
+
+G_DEFINE_TYPE(hd_sentryHdSentryHostApiClearBreadcrumbsResponse, hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response, G_TYPE_OBJECT)
+
+static void hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_dispose(GObject* object) {
+  hd_sentryHdSentryHostApiClearBreadcrumbsResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_CLEAR_BREADCRUMBS_RESPONSE(object);
+  g_clear_pointer(&self->value, fl_value_unref);
+  G_OBJECT_CLASS(hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_parent_class)->dispose(object);
+}
+
+static void hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_init(hd_sentryHdSentryHostApiClearBreadcrumbsResponse* self) {
+}
+
+static void hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_class_init(hd_sentryHdSentryHostApiClearBreadcrumbsResponseClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_dispose;
+}
+
+hd_sentryHdSentryHostApiClearBreadcrumbsResponse* hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new() {
+  hd_sentryHdSentryHostApiClearBreadcrumbsResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_CLEAR_BREADCRUMBS_RESPONSE(g_object_new(hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_get_type(), nullptr));
+  self->value = fl_value_new_list();
+  fl_value_append_take(self->value, fl_value_new_null());
+  return self;
+}
+
+hd_sentryHdSentryHostApiClearBreadcrumbsResponse* hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new_error(const gchar* code, const gchar* message, FlValue* details) {
+  hd_sentryHdSentryHostApiClearBreadcrumbsResponse* self = HD_SENTRY_HD_SENTRY_HOST_API_CLEAR_BREADCRUMBS_RESPONSE(g_object_new(hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_get_type(), nullptr));
+  self->value = fl_value_new_list();
+  fl_value_append_take(self->value, fl_value_new_string(code));
+  fl_value_append_take(self->value, fl_value_new_string(message != nullptr ? message : ""));
+  fl_value_append_take(self->value, details != nullptr ? fl_value_ref(details) : fl_value_new_null());
+  return self;
+}
+
 struct _hd_sentryHdSentryHostApi {
   GObject parent_instance;
 
@@ -474,6 +548,50 @@ static void hd_sentry_hd_sentry_host_api_capture_exception_cb(FlBasicMessageChan
   }
 }
 
+static void hd_sentry_hd_sentry_host_api_add_breadcrumb_cb(FlBasicMessageChannel* channel, FlValue* message_, FlBasicMessageChannelResponseHandle* response_handle, gpointer user_data) {
+  hd_sentryHdSentryHostApi* self = HD_SENTRY_HD_SENTRY_HOST_API(user_data);
+
+  if (self->vtable == nullptr || self->vtable->add_breadcrumb == nullptr) {
+    return;
+  }
+
+  FlValue* value0 = fl_value_get_list_value(message_, 0);
+  const gchar* message = fl_value_get_string(value0);
+  FlValue* value1 = fl_value_get_list_value(message_, 1);
+  const gchar* category = fl_value_get_string(value1);
+  FlValue* value2 = fl_value_get_list_value(message_, 2);
+  const gchar* data = fl_value_get_string(value2);
+  g_autoptr(hd_sentryHdSentryHostApiAddBreadcrumbResponse) response = self->vtable->add_breadcrumb(message, category, data, self->user_data);
+  if (response == nullptr) {
+    g_warning("No response returned to %s.%s", "HdSentryHostApi", "addBreadcrumb");
+    return;
+  }
+
+  g_autoptr(GError) error = NULL;
+  if (!fl_basic_message_channel_respond(channel, response_handle, response->value, &error)) {
+    g_warning("Failed to send response to %s.%s: %s", "HdSentryHostApi", "addBreadcrumb", error->message);
+  }
+}
+
+static void hd_sentry_hd_sentry_host_api_clear_breadcrumbs_cb(FlBasicMessageChannel* channel, FlValue* message_, FlBasicMessageChannelResponseHandle* response_handle, gpointer user_data) {
+  hd_sentryHdSentryHostApi* self = HD_SENTRY_HD_SENTRY_HOST_API(user_data);
+
+  if (self->vtable == nullptr || self->vtable->clear_breadcrumbs == nullptr) {
+    return;
+  }
+
+  g_autoptr(hd_sentryHdSentryHostApiClearBreadcrumbsResponse) response = self->vtable->clear_breadcrumbs(self->user_data);
+  if (response == nullptr) {
+    g_warning("No response returned to %s.%s", "HdSentryHostApi", "clearBreadcrumbs");
+    return;
+  }
+
+  g_autoptr(GError) error = NULL;
+  if (!fl_basic_message_channel_respond(channel, response_handle, response->value, &error)) {
+    g_warning("Failed to send response to %s.%s: %s", "HdSentryHostApi", "clearBreadcrumbs", error->message);
+  }
+}
+
 void hd_sentry_hd_sentry_host_api_set_method_handlers(FlBinaryMessenger* messenger, const gchar* suffix, const hd_sentryHdSentryHostApiVTable* vtable, gpointer user_data, GDestroyNotify user_data_free_func) {
   g_autofree gchar* dot_suffix = suffix != nullptr ? g_strdup_printf(".%s", suffix) : g_strdup("");
   g_autoptr(hd_sentryHdSentryHostApi) api_data = hd_sentry_hd_sentry_host_api_new(vtable, user_data, user_data_free_func);
@@ -500,6 +618,12 @@ void hd_sentry_hd_sentry_host_api_set_method_handlers(FlBinaryMessenger* messeng
   g_autofree gchar* capture_exception_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.captureException%s", dot_suffix);
   g_autoptr(FlBasicMessageChannel) capture_exception_channel = fl_basic_message_channel_new(messenger, capture_exception_channel_name, FL_MESSAGE_CODEC(codec));
   fl_basic_message_channel_set_message_handler(capture_exception_channel, hd_sentry_hd_sentry_host_api_capture_exception_cb, g_object_ref(api_data), g_object_unref);
+  g_autofree gchar* add_breadcrumb_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.addBreadcrumb%s", dot_suffix);
+  g_autoptr(FlBasicMessageChannel) add_breadcrumb_channel = fl_basic_message_channel_new(messenger, add_breadcrumb_channel_name, FL_MESSAGE_CODEC(codec));
+  fl_basic_message_channel_set_message_handler(add_breadcrumb_channel, hd_sentry_hd_sentry_host_api_add_breadcrumb_cb, g_object_ref(api_data), g_object_unref);
+  g_autofree gchar* clear_breadcrumbs_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.clearBreadcrumbs%s", dot_suffix);
+  g_autoptr(FlBasicMessageChannel) clear_breadcrumbs_channel = fl_basic_message_channel_new(messenger, clear_breadcrumbs_channel_name, FL_MESSAGE_CODEC(codec));
+  fl_basic_message_channel_set_message_handler(clear_breadcrumbs_channel, hd_sentry_hd_sentry_host_api_clear_breadcrumbs_cb, g_object_ref(api_data), g_object_unref);
 }
 
 void hd_sentry_hd_sentry_host_api_clear_method_handlers(FlBinaryMessenger* messenger, const gchar* suffix) {
@@ -527,4 +651,10 @@ void hd_sentry_hd_sentry_host_api_clear_method_handlers(FlBinaryMessenger* messe
   g_autofree gchar* capture_exception_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.captureException%s", dot_suffix);
   g_autoptr(FlBasicMessageChannel) capture_exception_channel = fl_basic_message_channel_new(messenger, capture_exception_channel_name, FL_MESSAGE_CODEC(codec));
   fl_basic_message_channel_set_message_handler(capture_exception_channel, nullptr, nullptr, nullptr);
+  g_autofree gchar* add_breadcrumb_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.addBreadcrumb%s", dot_suffix);
+  g_autoptr(FlBasicMessageChannel) add_breadcrumb_channel = fl_basic_message_channel_new(messenger, add_breadcrumb_channel_name, FL_MESSAGE_CODEC(codec));
+  fl_basic_message_channel_set_message_handler(add_breadcrumb_channel, nullptr, nullptr, nullptr);
+  g_autofree gchar* clear_breadcrumbs_channel_name = g_strdup_printf("dev.flutter.pigeon.hd_sentry.HdSentryHostApi.clearBreadcrumbs%s", dot_suffix);
+  g_autoptr(FlBasicMessageChannel) clear_breadcrumbs_channel = fl_basic_message_channel_new(messenger, clear_breadcrumbs_channel_name, FL_MESSAGE_CODEC(codec));
+  fl_basic_message_channel_set_message_handler(clear_breadcrumbs_channel, nullptr, nullptr, nullptr);
 }

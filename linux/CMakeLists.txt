@@ -17,6 +17,7 @@ list(APPEND PLUGIN_SOURCES
   "hd_sentry_crash_handler.cc"
   "hd_sentry_host_api_impl.c"
   "hd_sentry_crash_store.c"
+  "hd_sentry_breadcrumb_store.c"
   "hd_sentry_crash_handler.c"
   "hd_sentry_linux_stack_trace.c"
   "hd_sentry_linux_crash_dump.c"

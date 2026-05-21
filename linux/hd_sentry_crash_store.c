@@ -1,5 +1,6 @@
 #include "hd_sentry_crash_store.h"
 
+#include "hd_sentry_breadcrumb_store.h"
 #include "hd_sentry_linux_crash_dump.h"
 
 #include <dirent.h>
@@ -92,6 +93,11 @@ static gboolean write_text_report(const gchar* full_path,
           "%s\n",
           platform, timestamp, type, message,
           stack_trace != NULL ? stack_trace : "");
+  g_autofree gchar* breadcrumbs =
+      hd_sentry_breadcrumb_store_consume_formatted_section();
+  if (breadcrumbs != NULL && breadcrumbs[0] != '\0') {
+    fprintf(file, "%s", breadcrumbs);
+  }
   if (extra_footer != NULL && extra_footer[0] != '\0') {
     fprintf(file, "%s", extra_footer);
   }
@@ -214,6 +220,7 @@ gboolean hd_sentry_crash_store_delete_file(const gchar* file_name,
 
 void hd_sentry_crash_store_clear_all(void) {
   ensure_configured();
+  hd_sentry_breadcrumb_store_clear();
   DIR* dir = opendir(g_crash_directory);
   if (dir == NULL) {
     return;

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import 'src/flutter_error_hooks.dart';
@@ -65,4 +67,25 @@ class HdSentry {
         details.exceptionAsString(),
         details.stack?.toString(),
       );
+
+  /// Records user/session context before a crash (merged into the next report).
+  static Future<void> addBreadcrumb(
+    String message, {
+    String? category,
+    Map<String, String>? data,
+  }) {
+    final encoded = data == null || data.isEmpty ? null : _encodeBreadcrumbData(data);
+    return _backend.addBreadcrumb(message, category: category, data: encoded);
+  }
+
+  /// Clears persisted session breadcrumbs without deleting crash files.
+  static Future<void> clearBreadcrumbs() => _backend.clearBreadcrumbs();
+
+  static String? _encodeBreadcrumbData(Map<String, String> data) {
+    try {
+      return jsonEncode(data);
+    } catch (_) {
+      return null;
+    }
+  }
 }

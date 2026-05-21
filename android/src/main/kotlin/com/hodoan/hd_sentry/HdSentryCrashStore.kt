@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-internal object HdSentryCrashStore {
+object HdSentryCrashStore {
     private const val CRASH_DIR = "hd_sentry_crashes"
     private const val FILE_PREFIX = "crash_"
     private const val FILE_SUFFIX = ".txt"
@@ -43,7 +43,9 @@ internal object HdSentryCrashStore {
     }
 
     fun clearAll() {
-        directory().listFiles()?.forEach { file ->
+        val dir = directory()
+        HdSentryBreadcrumbStore.clear(dir)
+        dir.listFiles()?.forEach { file ->
             if (file.isFile) {
                 file.delete()
             }
@@ -71,6 +73,7 @@ internal object HdSentryCrashStore {
             appendLine()
             appendLine("--- stack trace ---")
             append(stackTrace)
+            append(HdSentryBreadcrumbStore.consumeFormattedSection(directory()))
         }
         File(directory(), fileName).writeText(body)
         return fileName

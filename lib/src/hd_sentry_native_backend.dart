@@ -34,4 +34,15 @@ class HdSentryNativeBackend extends HdSentryBackend {
   @override
   Future<void> captureException(String message, String? stackTrace) =>
       _host.captureException(message, stackTrace);
+
+  @override
+  Future<void> addBreadcrumb(
+    String message, {
+    String? category,
+    String? data,
+  }) =>
+      _host.addBreadcrumb(message, category, data);
+
+  @override
+  Future<void> clearBreadcrumbs() => _host.clearBreadcrumbs();
 }

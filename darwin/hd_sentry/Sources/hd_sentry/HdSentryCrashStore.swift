@@ -54,6 +54,8 @@ enum HdSentryCrashStore {
   }
 
   static func clearAll() throws {
+    let directory = try directory()
+    try HdSentryBreadcrumbStore.clear(crashDirectory: directory)
     let names = try listFileNames()
     for name in names {
       _ = try deleteFile(fileName: name)
@@ -91,8 +93,10 @@ enum HdSentryCrashStore {
     --- stack trace ---
     \(stackTrace)
     """
+    let crashDir = try directory()
+    body += HdSentryBreadcrumbStore.consumeFormattedSection(crashDirectory: crashDir)
 
-    let fileURL = try directory().appendingPathComponent(fileName)
+    let fileURL = crashDir.appendingPathComponent(fileName)
     try body.write(to: fileURL, atomically: true, encoding: .utf8)
     return fileName
   }

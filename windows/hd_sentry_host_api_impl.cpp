@@ -1,5 +1,6 @@
 #include "hd_sentry_host_api_impl.h"
 
+#include "hd_sentry_breadcrumb_store.h"
 #include "hd_sentry_crash_handler.h"
 #include "hd_sentry_crash_store.h"
 
@@ -43,6 +44,19 @@ std::optional<FlutterError> HdSentryHostApiImpl::CaptureException(
   HdSentryCrashStore::WriteReport(
       "windows", "flutter_error", message,
       stack_trace != nullptr ? *stack_trace : "");
+  return std::nullopt;
+}
+
+std::optional<FlutterError> HdSentryHostApiImpl::AddBreadcrumb(
+    const std::string& message,
+    const std::string* category,
+    const std::string* data) {
+  HdSentryBreadcrumbStore::Add(message, category, data);
+  return std::nullopt;
+}
+
+std::optional<FlutterError> HdSentryHostApiImpl::ClearBreadcrumbs() {
+  HdSentryBreadcrumbStore::Clear();
   return std::nullopt;
 }
 

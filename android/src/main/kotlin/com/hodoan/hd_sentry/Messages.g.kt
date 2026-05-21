@@ -72,6 +72,10 @@ interface HdSentryHostApi {
   fun clearAllCrashFiles()
   /** Captures an exception. */
   fun captureException(message: String, stackTrace: String?)
+  /** Appends a breadcrumb to the session log (persisted on disk for native crashes). */
+  fun addBreadcrumb(message: String, category: String?, data: String?)
+  /** Clears persisted session breadcrumbs. */
+  fun clearBreadcrumbs()
 
   companion object {
     /** The codec used by HdSentryHostApi. */
@@ -187,6 +191,42 @@ interface HdSentryHostApi {
             val stackTraceArg = args[1] as String?
             val wrapped: List<Any?> = try {
               api.captureException(messageArg, stackTraceArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.addBreadcrumb$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val messageArg = args[0] as String
+            val categoryArg = args[1] as String?
+            val dataArg = args[2] as String?
+            val wrapped: List<Any?> = try {
+              api.addBreadcrumb(messageArg, categoryArg, dataArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.hd_sentry.HdSentryHostApi.clearBreadcrumbs$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.clearBreadcrumbs()
               listOf(null)
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)

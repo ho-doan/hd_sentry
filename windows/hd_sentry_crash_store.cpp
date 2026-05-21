@@ -1,5 +1,6 @@
 #include "hd_sentry_crash_store.h"
 
+#include "hd_sentry_breadcrumb_store.h"
 #include "hd_sentry_win_minidump.h"
 
 #include <algorithm>
@@ -87,8 +88,13 @@ void WriteTextReportFile(const fs::path& full_path,
        << "message: " << message << "\n\n"
        << "--- stack trace ---\n"
        << stack_trace;
+  const std::string breadcrumbs =
+      HdSentryBreadcrumbStore::ConsumeFormattedSection();
+  if (!breadcrumbs.empty()) {
+    body << breadcrumbs;
+  }
   if (!extra_footer.empty()) {
-    body << '\n' << extra_footer;
+    body << extra_footer;
   }
 
   std::ofstream output(full_path, std::ios::trunc);
@@ -173,6 +179,7 @@ bool HdSentryCrashStore::DeleteFileHdSentry(const std::string& file_name) {
 
 void HdSentryCrashStore::ClearAll() {
   ConfigureHdSentry();
+  HdSentryBreadcrumbStore::Clear();
   std::error_code ec;
   for (const auto& entry : fs::directory_iterator(CrashDirectory(), ec)) {
     if (!entry.is_regular_file()) {

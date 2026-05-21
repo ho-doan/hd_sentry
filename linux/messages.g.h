@@ -173,6 +173,52 @@ hd_sentryHdSentryHostApiCaptureExceptionResponse* hd_sentry_hd_sentry_host_api_c
  */
 hd_sentryHdSentryHostApiCaptureExceptionResponse* hd_sentry_hd_sentry_host_api_capture_exception_response_new_error(const gchar* code, const gchar* message, FlValue* details);
 
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiAddBreadcrumbResponse, hd_sentry_hd_sentry_host_api_add_breadcrumb_response, HD_SENTRY, HD_SENTRY_HOST_API_ADD_BREADCRUMB_RESPONSE, GObject)
+
+/**
+ * hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.addBreadcrumb.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiAddBreadcrumbResponse
+ */
+hd_sentryHdSentryHostApiAddBreadcrumbResponse* hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new();
+
+/**
+ * hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.addBreadcrumb.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiAddBreadcrumbResponse
+ */
+hd_sentryHdSentryHostApiAddBreadcrumbResponse* hd_sentry_hd_sentry_host_api_add_breadcrumb_response_new_error(const gchar* code, const gchar* message, FlValue* details);
+
+G_DECLARE_FINAL_TYPE(hd_sentryHdSentryHostApiClearBreadcrumbsResponse, hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response, HD_SENTRY, HD_SENTRY_HOST_API_CLEAR_BREADCRUMBS_RESPONSE, GObject)
+
+/**
+ * hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new:
+ *
+ * Creates a new response to HdSentryHostApi.clearBreadcrumbs.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiClearBreadcrumbsResponse
+ */
+hd_sentryHdSentryHostApiClearBreadcrumbsResponse* hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new();
+
+/**
+ * hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new_error:
+ * @code: error code.
+ * @message: error message.
+ * @details: (allow-none): error details or %NULL.
+ *
+ * Creates a new error response to HdSentryHostApi.clearBreadcrumbs.
+ *
+ * Returns: a new #hd_sentryHdSentryHostApiClearBreadcrumbsResponse
+ */
+hd_sentryHdSentryHostApiClearBreadcrumbsResponse* hd_sentry_hd_sentry_host_api_clear_breadcrumbs_response_new_error(const gchar* code, const gchar* message, FlValue* details);
+
 /**
  * hd_sentryHdSentryHostApiVTable:
  *
@@ -186,6 +232,8 @@ typedef struct {
   hd_sentryHdSentryHostApiDeleteCrashFileResponse* (*delete_crash_file)(const gchar* file_name, gpointer user_data);
   hd_sentryHdSentryHostApiClearAllCrashFilesResponse* (*clear_all_crash_files)(gpointer user_data);
   hd_sentryHdSentryHostApiCaptureExceptionResponse* (*capture_exception)(const gchar* message, const gchar* stack_trace, gpointer user_data);
+  hd_sentryHdSentryHostApiAddBreadcrumbResponse* (*add_breadcrumb)(const gchar* message, const gchar* category, const gchar* data, gpointer user_data);
+  hd_sentryHdSentryHostApiClearBreadcrumbsResponse* (*clear_breadcrumbs)(gpointer user_data);
 } hd_sentryHdSentryHostApiVTable;
 
 /**
